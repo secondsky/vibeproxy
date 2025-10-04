@@ -1,0 +1,29 @@
+# Swift Build
+.build/
+*.swiftmodule
+*.swiftdoc
+
+# Xcode
+xcuserdata/
+*.xcworkspace
+*.xcodeproj
+
+# App Bundle
+ProxyBar.app
+*.app
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Resources (copied during build)
+Sources/Resources/cli-proxy-api
+Sources/Resources/config.yaml
+Sources/Resources/static/
+
+# Icon generation artifacts
+Sources/Resources/AppIcon.iconset/
+
+# Logs
+*.log
