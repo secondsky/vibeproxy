@@ -76,12 +76,6 @@ When you click "Connect":
 
 ## Building
 
-### Prerequisites
-
-1. Place `cli-proxy-api` binary in parent directory
-2. Place `config.yaml` in parent directory
-3. Place `static/` folder in parent directory
-
 ### Build Commands
 
 ```bash
@@ -113,7 +107,9 @@ ProxyBar/
 │       ├── icon-active.png     # Menu bar icon (active)
 │       ├── icon-inactive.png   # Menu bar icon (inactive)
 │       ├── icon-codex.png      # Codex service icon
-│       └── icon-claude.png     # Claude service icon
+│       ├── icon-claude.png     # Clause service icon
+│       ├── cli-proxy-api       # CLIProxyAPI binary
+│       └── config.yaml         # CLIProxyAPI config
 ├── Package.swift               # Swift Package Manager config
 ├── Info.plist                  # macOS app metadata
 ├── build.sh                    # Resource bundling script
