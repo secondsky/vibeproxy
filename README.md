@@ -102,14 +102,14 @@ ProxyBar/
 │   ├── SettingsView.swift      # Main UI
 │   ├── AuthStatus.swift        # Auth file monitoring
 │   └── Resources/
+│       ├── AppIcon.iconset     # App icon
 │       ├── AppIcon.icns        # App icon
-│       ├── Icons/              # Icon set (macOS 26 Liquid Glass)
+│       ├── cli-proxy-api       # CLIProxyAPI binary
+│       ├── config.yaml         # CLIProxyAPI config
 │       ├── icon-active.png     # Menu bar icon (active)
 │       ├── icon-inactive.png   # Menu bar icon (inactive)
 │       ├── icon-codex.png      # Codex service icon
-│       ├── icon-claude.png     # Clause service icon
-│       ├── cli-proxy-api       # CLIProxyAPI binary
-│       └── config.yaml         # CLIProxyAPI config
+│       └── icon-claude.png     # Clause service icon
 ├── Package.swift               # Swift Package Manager config
 ├── Info.plist                  # macOS app metadata
 ├── build.sh                    # Resource bundling script
