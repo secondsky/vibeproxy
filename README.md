@@ -1,7 +1,7 @@
 # ProxyBar
 
 <p align="center">
-  <img src="Sources/Resources/Icons/Icon-macOS-Default-256x256@2x.png" width="128" height="128" alt="ProxyBar Icon">
+  <img src="icon.png" width="128" height="128" alt="ProxyBar Icon">
 </p>
 
 A native macOS menu bar application for managing [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) - the unified proxy server for AI services.
