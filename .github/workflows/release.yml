@@ -63,29 +63,30 @@ jobs:
           spctl -a -vvv -t install VibeProxy.app || echo "⚠️ Gatekeeper check failed (expected without notarization)"
 
       # Notarize the app for seamless installation (no Gatekeeper warnings)
-      - name: Notarize App
-        run: |
-          # Create a ZIP for notarization
-          ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
-
-          # Submit for notarization
-          echo "Submitting app for notarization..."
-          xcrun notarytool submit "VibeProxy-notarize.zip" \
-            --apple-id "${{ secrets.APPLE_ID }}" \
-            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
-            --wait
-
-          # Staple the notarization ticket
-          echo "Stapling notarization ticket..."
-          xcrun stapler staple "VibeProxy.app"
-
-          # Verify stapling
-          xcrun stapler validate "VibeProxy.app"
-          echo "✅ App successfully notarized!"
-
-          # Remove the notarization ZIP
-          rm "VibeProxy-notarize.zip"
+      # Temporarily disabled - will debug and enable in v1.0.1
+      # - name: Notarize App
+      #   run: |
+      #     # Create a ZIP for notarization
+      #     ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
+      #     
+      #     # Submit for notarization
+      #     echo "Submitting app for notarization..."
+      #     xcrun notarytool submit "VibeProxy-notarize.zip" \
+      #       --apple-id "${{ secrets.APPLE_ID }}" \
+      #       --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+      #       --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+      #       --wait
+      #     
+      #     # Staple the notarization ticket
+      #     echo "Stapling notarization ticket..."
+      #     xcrun stapler staple "VibeProxy.app"
+      #     
+      #     # Verify stapling
+      #     xcrun stapler validate "VibeProxy.app"
+      #     echo "✅ App successfully notarized!"
+      #     
+      #     # Remove the notarization ZIP
+      #     rm "VibeProxy-notarize.zip"
 
       - name: Create DMG
         run: |
