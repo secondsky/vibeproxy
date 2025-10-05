@@ -11,7 +11,8 @@ NC='\033[0m' # No Color
 
 # Paths
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RESOURCES_DIR="$PROJECT_DIR/Sources/Resources"
+SRC_DIR="$PROJECT_DIR/src"
+RESOURCES_DIR="$SRC_DIR/Sources/Resources"
 PARENT_DIR="$(dirname "$PROJECT_DIR")"
 
 echo -e "${BLUE}📦 Checking resources...${NC}"
@@ -55,8 +56,10 @@ fi
 
 echo -e "${BLUE}🏗️  Building Swift app...${NC}"
 
-# Build the Swift package
+# Build the Swift package from src directory
+cd "$SRC_DIR"
 swift build -c release
+cd "$PROJECT_DIR"
 
 echo -e "${GREEN}✓ Build complete!${NC}"
 echo ""
@@ -66,4 +69,4 @@ echo "  2. Platypus (for quick wrapping)"
 echo "  3. Manual .app bundle creation"
 echo ""
 echo "The binary is located at:"
-echo "  .build/release/CLIProxyMenuBar"
+echo "  src/.build/release/CLIProxyMenuBar"

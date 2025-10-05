@@ -11,9 +11,10 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$PROJECT_DIR/src"
 APP_NAME="VibeProxy"
 BUNDLE_ID="com.cliproxyapi.menubar"
-BUILD_DIR="$PROJECT_DIR/.build/release"
+BUILD_DIR="$SRC_DIR/.build/release"
 APP_DIR="$PROJECT_DIR/$APP_NAME.app"
 
 # Build first
@@ -33,16 +34,16 @@ chmod +x "$APP_DIR/Contents/MacOS/CLIProxyMenuBar"
 
 # Copy resources
 echo -e "${BLUE}Copying resources...${NC}"
-cp -r "$PROJECT_DIR/Sources/Resources" "$APP_DIR/Contents/Resources/"
+cp -r "$SRC_DIR/Sources/Resources" "$APP_DIR/Contents/Resources/"
 
 # Copy app icon
-if [ -f "$PROJECT_DIR/Sources/Resources/AppIcon.icns" ]; then
-    cp "$PROJECT_DIR/Sources/Resources/AppIcon.icns" "$APP_DIR/Contents/Resources/"
+if [ -f "$SRC_DIR/Sources/Resources/AppIcon.icns" ]; then
+    cp "$SRC_DIR/Sources/Resources/AppIcon.icns" "$APP_DIR/Contents/Resources/"
 fi
 
 # Copy Info.plist
 echo -e "${BLUE}Copying Info.plist...${NC}"
-cp "$PROJECT_DIR/Info.plist" "$APP_DIR/Contents/"
+cp "$SRC_DIR/Info.plist" "$APP_DIR/Contents/"
 
 # Create PkgInfo
 echo -e "${BLUE}Creating PkgInfo...${NC}"

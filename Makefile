@@ -8,13 +8,13 @@ help: ## Show this help message
 
 build: ## Build the Swift executable (debug)
 	@echo "🔨 Building Swift executable..."
-	@swift build
-	@echo "✅ Build complete: .build/debug/CLIProxyMenuBar"
+	@cd src && swift build
+	@echo "✅ Build complete: src/.build/debug/CLIProxyMenuBar"
 
 release: ## Build the Swift executable (release)
 	@echo "🔨 Building Swift executable (release)..."
 	@./build.sh
-	@echo "✅ Build complete: .build/release/CLIProxyMenuBar"
+	@echo "✅ Build complete: src/.build/release/CLIProxyMenuBar"
 
 app: ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."
@@ -33,29 +33,29 @@ run: app ## Build and run the app
 
 clean: ## Clean build artifacts
 	@echo "🧹 Cleaning..."
-	@rm -rf .build
+	@rm -rf src/.build
 	@rm -rf "VibeProxy.app"
-	@rm -rf Sources/Resources/cli-proxy-api
-	@rm -rf Sources/Resources/config.yaml
-	@rm -rf Sources/Resources/static
+	@rm -rf src/Sources/Resources/cli-proxy-api
+	@rm -rf src/Sources/Resources/config.yaml
+	@rm -rf src/Sources/Resources/static
 	@echo "✅ Clean complete"
 
 test: ## Run a quick test build
 	@echo "🧪 Testing build..."
-	@swift build
+	@cd src && swift build
 	@echo "✅ Test build successful"
 
 info: ## Show project information
-	@echo "Project: CLI Proxy API Menu Bar"
+	@echo "Project: VibeProxy - macOS Menu Bar App"
 	@echo "Language: Swift 5.9+"
 	@echo "Platform: macOS 13.0+"
 	@echo ""
 	@echo "Files:"
-	@find Sources -name "*.swift" -exec wc -l {} + | tail -1 | awk '{print "  Swift code: " $$1 " lines"}'
+	@find src/Sources -name "*.swift" -exec wc -l {} + | tail -1 | awk '{print "  Swift code: " $$1 " lines"}'
 	@echo "  Documentation: 4 files"
 	@echo ""
 	@echo "Structure:"
-	@tree -L 2 -I ".build" || echo "  (install 'tree' for better output)"
+	@tree -L 3 -I ".build" || echo "  (install 'tree' for better output)"
 
 open: ## Open app bundle to inspect contents
 	@if [ -d "VibeProxy.app" ]; then \

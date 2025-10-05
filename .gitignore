@@ -1,5 +1,5 @@
 # Swift Build
-.build/
+src/.build/
 *.swiftmodule
 *.swiftdoc
 
@@ -9,7 +9,6 @@ xcuserdata/
 *.xcodeproj
 
 # App Bundle
-ProxyBar.app
 *.app
 
 # macOS
@@ -18,12 +17,12 @@ ProxyBar.app
 .LSOverride
 
 # Resources (copied during build)
-Sources/Resources/cli-proxy-api
-Sources/Resources/config.yaml
-Sources/Resources/static/
+src/Sources/Resources/cli-proxy-api
+src/Sources/Resources/config.yaml
+src/Sources/Resources/static/
 
 # Icon generation artifacts
-Sources/Resources/AppIcon.iconset/
+src/Sources/Resources/AppIcon.iconset/
 
 # Logs
 *.log
