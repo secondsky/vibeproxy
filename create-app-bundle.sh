@@ -111,7 +111,16 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
     # Sign the cli-proxy-api binary (required for notarization)
     if [ -f "$APP_DIR/Contents/Resources/cli-proxy-api" ]; then
         echo -e "${BLUE}Signing cli-proxy-api binary...${NC}"
-        codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/Resources/cli-proxy-api"
+        # Use entitlements for the bundled binary
+        if [ -f "$PROJECT_DIR/entitlements.plist" ]; then
+            codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp \
+                --entitlements "$PROJECT_DIR/entitlements.plist" \
+                "$APP_DIR/Contents/Resources/cli-proxy-api"
+        else
+            codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp \
+                "$APP_DIR/Contents/Resources/cli-proxy-api"
+        fi
+        echo -e "${GREEN}✅ cli-proxy-api signed${NC}"
     fi
     
     # Sign the main executable with hardened runtime
