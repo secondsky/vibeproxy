@@ -2,11 +2,8 @@
 
 A simplified guide for using Factory CLI (Droid) with your personal Claude and ChatGPT subscriptions through VibeProxy.
 
----
-
-> ## ⚠️ IMPORTANT DISCLAIMER
->
-> **This guide describes a proof-of-concept configuration for educational and experimental purposes only.**
+> [!WARNING]
+> **⚠️ IMPORTANT DISCLAIMER**
 >
 > **By using this method, you acknowledge and accept the following:**
 >
@@ -24,30 +21,26 @@ A simplified guide for using Factory CLI (Droid) with your personal Claude and C
 
 ## What is This?
 
-This guide shows you how to use Factory CLI with your personal Claude Code Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxy acts as a bridge that handles the authentication and routing for you.
+This guide shows you how to use Factory CLI with your personal Claude Code Pro/Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxy acts as a bridge that handles authentication and routing automatically.
 
-## Architecture Overview
+**How it works:**
 
 ```
 Factory CLI  →  VibeProxy  →  [OAuth Authentication]  →  Claude / ChatGPT APIs
 ```
 
-VibeProxy automatically:
-- Manages OAuth tokens for both services
-- Auto-refreshes expired tokens
-- Routes requests to the correct service
-- Handles API format conversion
+VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handles API format conversion — all automatically in the background.
 
 ## Prerequisites
 
 - macOS 13.0+ (Ventura or later)
-- Active **Claude Code Max** (or Claude Pro) subscription for Anthropic access
+- Active **Claude Code Pro/Max** subscription for Anthropic access
 - Active **ChatGPT Plus/Pro** subscription for OpenAI Codex access
 - Factory CLI installed: `curl -fsSL https://app.factory.ai/cli | sh`
 
 ## Step 1: Install VibeProxy
 
-1. **Download VibeProxy.app** from the releases page or build from source
+1. **Download [VibeProxy.app]()** from the releases page or build from source
 2. **Install**: Drag `VibeProxy.app` to your `/Applications` folder
 3. **Launch**: Open VibeProxy from Applications
    - If macOS blocks it: Right-click → Open, then click "Open" in the dialog
@@ -70,17 +63,11 @@ Once VibeProxy is running:
 
 ## Step 3: Configure Factory CLI
 
-Edit your Factory configuration file at `~/.factory/config.json`:
+Edit your Factory configuration file at `~/.factory/config.json` (if the file doesn't exist, create it):
 
 ```json
 {
   "custom_models": [
-    {
-      "model": "claude-sonnet-4-5-20250929",
-      "base_url": "http://localhost:8317",
-      "api_key": "dummy-not-used",
-      "provider": "anthropic"
-    },
     {
       "model": "claude-opus-4-1-20250805",
       "base_url": "http://localhost:8317",
@@ -88,7 +75,7 @@ Edit your Factory configuration file at `~/.factory/config.json`:
       "provider": "anthropic"
     },
     {
-      "model": "claude-sonnet-4-20250514",
+      "model": "claude-sonnet-4-5-20250929",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
@@ -151,12 +138,6 @@ Edit your Factory configuration file at `~/.factory/config.json`:
 }
 ```
 
-**Note about `/v1`**: 
-- For Anthropic models, use just `http://localhost:8317` 
-- For OpenAI models, use `http://localhost:8317/v1`
-
-This is because Factory appends `/messages` for Anthropic and `/responses` for OpenAI automatically.
-
 ## Step 4: Use Factory CLI
 
 1. **Launch Factory CLI**:
@@ -177,15 +158,15 @@ This is because Factory appends `/messages` for Anthropic and `/responses` for O
 
 ## Available Models
 
-### Claude Models (via Claude Code Max/Pro)
+### Claude Models
+- `claude-opus-4-1-20250805` - Claude Opus 4.1 (Most powerful)
 - `claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet (Latest)
-- `claude-opus-4-1-20250805` - Claude Opus 4.1
-- `claude-sonnet-4-20250514` - Claude Sonnet 4
 
-### OpenAI Models (via ChatGPT Plus/Pro)
+### OpenAI Models
 - `gpt-5` - Standard GPT-5
-- `gpt-5-minimal`, `gpt-5-low`, `gpt-5-medium`, `gpt-5-high` - Different reasoning levels
-- `gpt-5-codex`, `gpt-5-codex-low`, `gpt-5-codex-medium`, `gpt-5-codex-high` - Codex variants
+- `gpt-5-minimal` / `low` / `medium` / `high` - Different reasoning effort levels
+- `gpt-5-codex` - Optimized for coding
+- `gpt-5-codex-low` / `medium` / `high` - Codex with different reasoning levels
 
 ## Troubleshooting
 
@@ -203,26 +184,21 @@ This is because Factory appends `/messages` for Anthropic and `/responses` for O
 | Authentication expired | Disconnect and reconnect the service in VibeProxy |
 | Port 8317 already in use | Quit any other instances of VibeProxy or CLIProxyAPI |
 
-### Enable Debug Mode
-
-Open VibeProxy settings to view server logs and connection status. The app automatically monitors your `~/.cli-proxy-api/` directory for auth files.
-
 ### Verification Checklist
 
-1. ✅ VibeProxy is running (menu bar shows status)
+1. ✅ VibeProxy is running (menu bar icon shows green)
 2. ✅ Both Claude and Codex show as "Connected" in settings
 3. ✅ Factory CLI config has the custom models configured
-4. ✅ `droid` command can select custom models
+4. ✅ `droid` can select your custom models
 5. ✅ Test with a simple prompt: "what day is it?"
 
 ## Tips
 
 - **Launch at Login**: Enable in VibeProxy settings to auto-start the server
-- **Server URL**: Copy `http://localhost:8317` from the menu (right-click the status)
-- **Auth Folder**: Click "Open Folder" in settings to view your authentication files
-- **Quit Safely**: VibeProxy automatically stops the server and releases port 8317
+- **Auth Folder**: Click "Open Folder" in settings to view authentication tokens
+- **Server Control**: VibeProxy automatically stops the server and releases port 8317 when you quit
 
-## Security Notes
+## Security
 
 - All authentication tokens are stored locally in `~/.cli-proxy-api/`
 - Token files are secured with proper permissions (0600)
@@ -230,15 +206,22 @@ Open VibeProxy settings to view server logs and connection status. The app autom
 - All upstream traffic uses HTTPS
 - Tokens are auto-refreshed before expiration
 
+---
+
+## Acknowledgments
+
+VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services. Without CLIProxyAPI's robust OAuth handling, token management, and API routing capabilities, this application would not be possible.
+
+**Special thanks to the CLIProxyAPI project and its contributors for creating the foundation that makes VibeProxy work.**
+
 ## References
 
-- **VibeProxy**: This application
 - **CLIProxyAPI**: [https://github.com/router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
 - **Factory CLI**: [https://docs.factory.ai/cli](https://docs.factory.ai/cli)
 - **Original Setup Guide**: [https://gist.github.com/ben-vargas/9f1a14ac5f78d10eba56be437b7c76e5](https://gist.github.com/ben-vargas/9f1a14ac5f78d10eba56be437b7c76e5)
 
 ---
 
-**Need Help?** 
+**Need Help?**
 - Report issues: [GitHub Issues](https://github.com/automazeio/proxybar/issues)
 - VibeProxy by [Automaze, Ltd.](https://automaze.io)
