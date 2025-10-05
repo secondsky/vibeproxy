@@ -21,6 +21,13 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
   <img src="screenshot.webp?v=1" width="600" height="380" alt="VibeProxy Screenshot">
 </p>
 
+> [!TIP]
+> **Use VibeProxy with Factory AI!** 
+> 
+> Connect your Claude Code and ChatGPT subscriptions to [Factory Droids](https://factory.ai) to unlock powerful AI coding assistants without paying for separate API access. 
+>
+> 📖 Check out our [Factory Setup Guide](FACTORY_SETUP.md) for step-by-step instructions.
+
 ## Installation
 
 ### Build from Source
