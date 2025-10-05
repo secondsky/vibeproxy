@@ -63,30 +63,42 @@ jobs:
           spctl -a -vvv -t install VibeProxy.app || echo "⚠️ Gatekeeper check failed (expected without notarization)"
 
       # Notarize the app for seamless installation (no Gatekeeper warnings)
-      # Temporarily disabled - will debug and enable in v1.0.1
-      # - name: Notarize App
-      #   run: |
-      #     # Create a ZIP for notarization
-      #     ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
-      #     
-      #     # Submit for notarization
-      #     echo "Submitting app for notarization..."
-      #     xcrun notarytool submit "VibeProxy-notarize.zip" \
-      #       --apple-id "${{ secrets.APPLE_ID }}" \
-      #       --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-      #       --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
-      #       --wait
-      #     
-      #     # Staple the notarization ticket
-      #     echo "Stapling notarization ticket..."
-      #     xcrun stapler staple "VibeProxy.app"
-      #     
-      #     # Verify stapling
-      #     xcrun stapler validate "VibeProxy.app"
-      #     echo "✅ App successfully notarized!"
-      #     
-      #     # Remove the notarization ZIP
-      #     rm "VibeProxy-notarize.zip"
+      - name: Notarize App
+        run: |
+          # Create a ZIP for notarization
+          ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
+          
+          # Submit for notarization and capture the submission ID
+          echo "Submitting app for notarization..."
+          SUBMIT_OUTPUT=$(xcrun notarytool submit "VibeProxy-notarize.zip" \
+            --apple-id "${{ secrets.APPLE_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json)
+          
+          echo "$SUBMIT_OUTPUT"
+          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | jq -r '.id')
+          STATUS=$(echo "$SUBMIT_OUTPUT" | jq -r '.status')
+          
+          # If it failed, get the detailed log
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "❌ Notarization failed with status: $STATUS"
+            echo "📋 Getting detailed log..."
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --apple-id "${{ secrets.APPLE_ID }}" \
+              --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+              --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
+            exit 1
+          fi
+          
+          # Staple the notarization ticket
+          echo "✅ Notarization succeeded! Stapling ticket..."
+          xcrun stapler staple "VibeProxy.app"
+          xcrun stapler validate "VibeProxy.app"
+          echo "✅ App successfully notarized and stapled!"
+          
+          # Remove the notarization ZIP
+          rm "VibeProxy-notarize.zip"
 
       - name: Create DMG
         run: |
