@@ -47,6 +47,40 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION}"
 
+      - name: Download CLIProxyAPI binary
+        run: |
+          echo "📥 Downloading CLIProxyAPI..."
+          mkdir -p src/Sources/Resources
+          
+          # Download latest CLIProxyAPI release for macOS ARM64
+          curl -L -o src/Sources/Resources/cli-proxy-api \
+            https://github.com/router-for-me/CLIProxyAPI/releases/latest/download/cli-proxy-api-darwin-arm64
+          
+          chmod +x src/Sources/Resources/cli-proxy-api
+          
+          # Verify download
+          echo "✅ Downloaded cli-proxy-api:"
+          ls -lh src/Sources/Resources/cli-proxy-api
+          file src/Sources/Resources/cli-proxy-api
+
+      - name: Create config.yaml
+        run: |
+          echo "📝 Creating config.yaml..."
+          cat > src/Sources/Resources/config.yaml << 'EOF'
+          server:
+            port: 8317
+            host: 127.0.0.1
+          
+          services:
+            - name: codex
+              type: openai
+            - name: claude
+              type: anthropic
+          EOF
+          
+          echo "✅ Config created:"
+          cat src/Sources/Resources/config.yaml
+
       - name: Build app bundle
         env:
           CODESIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}
