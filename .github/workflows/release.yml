@@ -10,23 +10,23 @@ jobs:
   build-signed:
     name: Build and Sign macOS App
     runs-on: macos-13  # macOS Ventura
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Swift
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "5.9"
-      
+
       # Import Apple Developer certificates
       - name: Import Code Signing Certificates
         uses: apple-actions/import-codesign-certs@v2
         with:
           p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
           p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
-      
+
       # Install the provisioning profile (if needed for distribution)
       - name: Install Provisioning Profile
         if: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
@@ -35,49 +35,57 @@ jobs:
           echo -n "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o $PP_PATH
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
-      
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
       - name: Build app bundle
         env:
           CODESIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}
+          APP_VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
           chmod +x build.sh create-app-bundle.sh
           ./create-app-bundle.sh
-      
+
       # Verify the signing
       - name: Verify Code Signature
         run: |
           codesign --verify --deep --strict --verbose=2 VibeProxy.app
           codesign -dv --verbose=4 VibeProxy.app
           spctl -a -vvv -t install VibeProxy.app || echo "⚠️ Gatekeeper check failed (expected without notarization)"
-      
+
       # Optional: Notarize the app for seamless installation
       - name: Notarize App
         if: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
         run: |
           # Create a ZIP for notarization
           ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
-          
+
           # Submit for notarization
           xcrun notarytool submit "VibeProxy-notarize.zip" \
             --apple-id "${{ secrets.APPLE_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait
-          
+
           # Staple the notarization ticket
           xcrun stapler staple "VibeProxy.app"
-          
+
           # Verify stapling
           xcrun stapler validate "VibeProxy.app"
-          
+
           # Remove the notarization ZIP
           rm "VibeProxy-notarize.zip"
-      
+
       - name: Create DMG
         run: |
           # Install create-dmg tool
           brew install create-dmg
-          
+
           # Create DMG
           create-dmg \
             --volname "VibeProxy" \
@@ -91,28 +99,24 @@ jobs:
             --codesign "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}" \
             "VibeProxy.dmg" \
             "VibeProxy.app" || true
-          
+
           # Sign the DMG
           if [ -f "VibeProxy.dmg" ]; then
             codesign --sign "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}" "VibeProxy.dmg"
           fi
-      
+
       - name: Create ZIP archive
         run: |
           # ZIP is more reliable for GitHub releases
           ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy.zip"
-      
+
       - name: Calculate checksums
         run: |
           shasum -a 256 VibeProxy.zip > VibeProxy.zip.sha256
           if [ -f "VibeProxy.dmg" ]; then
             shasum -a 256 VibeProxy.dmg > VibeProxy.dmg.sha256
           fi
-      
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -127,42 +131,42 @@ jobs:
           generate_release_notes: true
           body: |
             ## VibeProxy ${{ steps.get_version.outputs.VERSION }}
-            
+
             ### Installation
-            
+
             **Option 1: ZIP (Recommended)**
             1. Download `VibeProxy.zip`
             2. Extract the file
             3. Drag `VibeProxy.app` to your `/Applications` folder
             4. Double-click to launch
-            
+
             **Option 2: DMG**
             1. Download `VibeProxy.dmg`
             2. Double-click to mount
             3. Drag `VibeProxy.app` to the Applications folder
             4. Eject the DMG
             5. Launch VibeProxy from Applications
-            
+
             ### What's New
-            
-            See the [CHANGELOG](https://github.com/automazeio/proxybar/blob/main/CHANGELOG.md) for details.
-            
+
+            See the [CHANGELOG](https://github.com/automazeio/vibeproxy/blob/main/CHANGELOG.md) for details.
+
             ### Verification
-            
+
             This release is **code signed** with Apple Developer ID and includes SHA-256 checksums for verification.
-            
+
             To verify the download:
             ```bash
             shasum -a 256 -c VibeProxy.zip.sha256
             ```
-            
+
             ---
-            
+
             ✅ **Code Signed**: This app is signed with an Apple Developer ID
             ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && '✅ **Notarized**: No Gatekeeper warnings!' || '⚠️ **Not Notarized**: You may need to right-click → Open on first launch' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Upload artifact (for manual downloads)
         uses: actions/upload-artifact@v3
         with:

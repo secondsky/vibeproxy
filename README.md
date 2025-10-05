@@ -30,27 +30,18 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 
 ## Installation
 
+### Download Pre-built Release (Recommended)
+
+1. Go to the [**Releases**](https://github.com/automazeio/vibeproxy/releases) page
+2. Download the latest `VibeProxy.zip`
+3. Extract and drag `VibeProxy.app` to `/Applications`
+4. Launch VibeProxy
+
+**Code Signed & Notarized** ✅ - No Gatekeeper warnings, installs seamlessly on macOS.
+
 ### Build from Source
 
-1. **Clone the repository**
-   ```bash
-   git clone git@github.com:automazeio/proxybar.git
-   cd proxybar
-   ```
-
-2. **Build the app**
-   ```bash
-   ./create-app-bundle.sh
-   ```
-
-3. **Install**
-   ```bash
-   # Option 1: Move to Applications folder
-   mv "VibeProxy.app" /Applications/
-
-   # Option 2: Run from current directory
-   open "VibeProxy.app"
-   ```
+Want to build it yourself? See [**INSTALLATION.md**](INSTALLATION.md) for detailed build instructions.
 
 ## Usage
 
@@ -78,23 +69,6 @@ When you click "Connect":
 ## Requirements
 
 - macOS 13.0 (Ventura) or later
-- Swift 5.9+
-- [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) binary (auto-bundled during build)
-
-## Building
-
-### Build Commands
-
-```bash
-# Quick build and run
-make run
-
-# Build .app bundle
-make app
-
-# Clean build artifacts
-make clean
-```
 
 ## Development
 
@@ -144,7 +118,7 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-- **Report Issues**: [GitHub Issues](https://github.com/automazeio/proxybar/issues)
+- **Report Issues**: [GitHub Issues](https://github.com/automazeio/vibeproxy/issues)
 - **Website**: [automaze.io](https://automaze.io)
 
 ---

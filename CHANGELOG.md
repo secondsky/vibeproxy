@@ -5,48 +5,40 @@ All notable changes to VibeProxy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2025-01-XX
 
-### Added
-- Factory AI integration guide
-- Automated GitHub Actions workflow for releases
-- Installation guide for users
-
-### Changed
-- Rebranded from ProxyBar to VibeProxy
-- Improved process cleanup to properly release ports
-- Restructured project with src/ directory
-
-### Fixed
-- Server process not properly terminating on app quit
-- Port 8317 sometimes remaining in use after quit
-
-## [1.0.0] - TBD
-
-### Added
-- Native macOS menu bar application
-- One-click server management
-- OAuth integration for Claude Code and Codex
-- Real-time status monitoring
-- Auto-refresh of authentication tokens
-- Custom icons with dark mode support
-- Self-contained app bundle
-- Built on top of CLIProxyAPI
+Initial release of VibeProxy - a native macOS menu bar application for managing CLIProxyAPI.
 
 ### Features
-- Start/stop proxy server from menu bar
-- Browser-based OAuth authentication
-- Automatic credential detection
-- Launch at login option
-- Auth folder quick access
-- Server URL copying
+
+- **Native macOS Experience** - Clean SwiftUI interface with menu bar integration
+- **One-Click Server Management** - Start/stop the proxy server from your menu bar
+- **OAuth Integration** - Authenticate with Claude Code and Codex directly from the app
+- **Real-Time Status** - Live connection status and automatic credential detection
+- **Auto-Updates** - Monitors auth files and updates UI in real-time
+- **Beautiful Icons** - Custom icons with dark mode support
+- **Self-Contained** - Everything bundled inside the .app (server binary, config, static files)
+- **Launch at Login** - Optional auto-start on macOS login
+- **Factory AI Integration** - Easy setup guide for Factory Droids
+
+### Technical
+
+- Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
+- Code signed with Apple Developer ID
+- Notarized for seamless installation
+- Automated version injection from git tags
+- Automated GitHub Actions release workflow
 
 ### Requirements
+
 - macOS 13.0 (Ventura) or later
-- Swift 5.9+
-- CLIProxyAPI binary (bundled)
 
 ---
 
-[Unreleased]: https://github.com/automazeio/proxybar/compare/v1.0.0...HEAD
+## Future Releases
+
+All future changes will be documented here before release.
+
+---
+
 [1.0.0]: https://github.com/automazeio/proxybar/releases/tag/v1.0.0

@@ -171,4 +171,4 @@ To eliminate the Gatekeeper warning and provide a better user experience, we cou
 
 ---
 
-**Questions?** Open an [issue](https://github.com/automazeio/proxybar/issues).
+**Questions?** Open an [issue](https://github.com/automazeio/vibeproxy/issues).

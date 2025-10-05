@@ -12,6 +12,14 @@ struct SettingsView: View {
     @State private var authResultSuccess = false
     @State private var fileMonitor: DispatchSourceFileSystemObject?
 
+    // Get app version from Info.plist
+    private var appVersion: String {
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            return "v\(version)"
+        }
+        return ""
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Form {
@@ -155,7 +163,7 @@ struct SettingsView: View {
             // Footer outside Form
             VStack(spacing: 4) {
                 HStack(spacing: 4) {
-                    Text("VibeProxy was made possible thanks to")
+                    Text("VibeProxy \(appVersion) was made possible thanks to")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Link("CLIProxyAPI", destination: URL(string: "https://github.com/router-for-me/CLIProxyAPI")!)
@@ -197,7 +205,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                Link("Report an issue", destination: URL(string: "https://github.com/automazeio/proxybar/issues")!)
+                Link("Report an issue", destination: URL(string: "https://github.com/automazeio/vibeproxy/issues")!)
                     .font(.caption)
                     .onHover { inside in
                         if inside {
