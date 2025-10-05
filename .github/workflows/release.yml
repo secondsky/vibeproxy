@@ -62,29 +62,30 @@ jobs:
           codesign -dv --verbose=4 VibeProxy.app
           spctl -a -vvv -t install VibeProxy.app || echo "⚠️ Gatekeeper check failed (expected without notarization)"
 
-      # Optional: Notarize the app for seamless installation
-      # Requires: APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_SPECIFIC_PASSWORD secrets
-      # Uncomment to enable notarization:
-      # - name: Notarize App
-      #   run: |
-      #     # Create a ZIP for notarization
-      #     ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
-      #     
-      #     # Submit for notarization
-      #     xcrun notarytool submit "VibeProxy-notarize.zip" \
-      #       --apple-id "${{ secrets.APPLE_ID }}" \
-      #       --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-      #       --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
-      #       --wait
-      #     
-      #     # Staple the notarization ticket
-      #     xcrun stapler staple "VibeProxy.app"
-      #     
-      #     # Verify stapling
-      #     xcrun stapler validate "VibeProxy.app"
-      #     
-      #     # Remove the notarization ZIP
-      #     rm "VibeProxy-notarize.zip"
+      # Notarize the app for seamless installation (no Gatekeeper warnings)
+      - name: Notarize App
+        run: |
+          # Create a ZIP for notarization
+          ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
+          
+          # Submit for notarization
+          echo "Submitting app for notarization..."
+          xcrun notarytool submit "VibeProxy-notarize.zip" \
+            --apple-id "${{ secrets.APPLE_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait
+          
+          # Staple the notarization ticket
+          echo "Stapling notarization ticket..."
+          xcrun stapler staple "VibeProxy.app"
+          
+          # Verify stapling
+          xcrun stapler validate "VibeProxy.app"
+          echo "✅ App successfully notarized!"
+          
+          # Remove the notarization ZIP
+          rm "VibeProxy-notarize.zip"
 
       - name: Create DMG
         run: |
@@ -168,7 +169,9 @@ jobs:
 
             ---
 
-            ✅ **Code Signed**: This app is signed with an Apple Developer ID
+            ✅ **Code Signed & Notarized**: This app is signed with an Apple Developer ID and notarized by Apple
+            
+            **No Gatekeeper warnings** - Double-click to install and run seamlessly!
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
