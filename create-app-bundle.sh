@@ -42,11 +42,15 @@ echo "Resources to copy:"
 ls -lh "$SRC_DIR/Sources/Resources/"
 
 # Copy each file/directory from Resources/* directly to Contents/Resources/
+# Exclude .swift files and other build artifacts
 if [ -d "$SRC_DIR/Sources/Resources" ]; then
     # Use a loop to copy each item to avoid nested Resources folder
     for item in "$SRC_DIR/Sources/Resources/"*; do
         if [ -e "$item" ]; then
-            cp -r "$item" "$APP_DIR/Contents/Resources/"
+            # Skip if it's a Swift file or Package.swift
+            if [[ "$item" != *.swift ]]; then
+                cp -r "$item" "$APP_DIR/Contents/Resources/"
+            fi
         fi
     done
 fi
