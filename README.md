@@ -30,6 +30,8 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 
 ## Installation
 
+**⚠️ Requirements:** macOS running on **Apple Silicon only** (M1/M2/M3/M4 Macs). Intel Macs are not supported.
+
 ### Download Pre-built Release (Recommended)
 
 1. Go to the [**Releases**](https://github.com/automazeio/vibeproxy/releases) page
