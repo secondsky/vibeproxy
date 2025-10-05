@@ -21,7 +21,7 @@ A simplified guide for using Factory CLI (Droid) with your personal Claude and C
 
 ## What is This?
 
-This guide shows you how to use Factory CLI with your personal Claude Code Pro/Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxy acts as a bridge that handles authentication and routing automatically.
+This guide shows you how to use [Factory CLI](https://app.factory.ai/r/FM8BJHFQ) with your personal Claude Code Pro/Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxy acts as a bridge that handles authentication and routing automatically.
 
 **How it works:**
 
@@ -40,7 +40,7 @@ VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handle
 
 ## Step 1: Install VibeProxy
 
-1. **Download [VibeProxy.app]()** from the releases page or build from source
+1. **Download [VibeProxy.app](https://github.com/automazeio/vibeproxy)** from the releases page or build from source
 2. **Install**: Drag `VibeProxy.app` to your `/Applications` folder
 3. **Launch**: Open VibeProxy from Applications
    - If macOS blocks it: Right-click → Open, then click "Open" in the dialog
@@ -223,5 +223,5 @@ VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIP
 ---
 
 **Need Help?**
-- Report issues: [GitHub Issues](https://github.com/automazeio/proxybar/issues)
+- Report issues: [GitHub Issues](https://github.com/automazeio/vibeproxy/issues)
 - VibeProxy by [Automaze, Ltd.](https://automaze.io)

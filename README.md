@@ -22,9 +22,9 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 </p>
 
 > [!TIP]
-> **Use VibeProxy with Factory AI!** 
-> 
-> Connect your Claude Code and ChatGPT subscriptions to [Factory Droids](https://factory.ai) to unlock powerful AI coding assistants without paying for separate API access. 
+> **Use VibeProxy with Factory AI!**
+>
+> Connect your Claude Code and ChatGPT subscriptions to [Factory Droids](https://app.factory.ai/r/FM8BJHFQ) to unlock powerful AI coding assistants without paying for separate API access.
 >
 > 📖 Check out our [Factory Setup Guide](FACTORY_SETUP.md) for step-by-step instructions.
 
