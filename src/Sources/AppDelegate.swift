@@ -33,7 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             // Load custom icon from bundle
             if let resourcePath = Bundle.main.resourcePath {
-                let iconPath = (resourcePath as NSString).appendingPathComponent("Resources/icon-inactive.png")
+                let iconPath = (resourcePath as NSString).appendingPathComponent("icon-inactive.png")
                 if let icon = NSImage(contentsOfFile: iconPath) {
                     icon.isTemplate = true
                     // Resize to proper menu bar size (18x18 points for menu bar)
@@ -161,7 +161,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button, let resourcePath = Bundle.main.resourcePath {
             if serverManager.isRunning {
                 // Load active icon
-                let iconPath = (resourcePath as NSString).appendingPathComponent("Resources/icon-active.png")
+                let iconPath = (resourcePath as NSString).appendingPathComponent("icon-active.png")
                 if let icon = NSImage(contentsOfFile: iconPath) {
                     icon.isTemplate = true
                     // Resize to proper menu bar size (18x18 points for menu bar)
@@ -174,7 +174,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } else {
                 // Load inactive icon
-                let iconPath = (resourcePath as NSString).appendingPathComponent("Resources/icon-inactive.png")
+                let iconPath = (resourcePath as NSString).appendingPathComponent("icon-inactive.png")
                 if let icon = NSImage(contentsOfFile: iconPath) {
                     icon.isTemplate = true
                     // Resize to proper menu bar size (18x18 points for menu bar)
