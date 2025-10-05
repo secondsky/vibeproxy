@@ -67,7 +67,7 @@ jobs:
         run: |
           # Create a ZIP for notarization
           ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
-          
+
           # Submit for notarization
           echo "Submitting app for notarization..."
           xcrun notarytool submit "VibeProxy-notarize.zip" \
@@ -75,15 +75,15 @@ jobs:
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait
-          
+
           # Staple the notarization ticket
           echo "Stapling notarization ticket..."
           xcrun stapler staple "VibeProxy.app"
-          
+
           # Verify stapling
           xcrun stapler validate "VibeProxy.app"
           echo "✅ App successfully notarized!"
-          
+
           # Remove the notarization ZIP
           rm "VibeProxy-notarize.zip"
 
@@ -170,7 +170,7 @@ jobs:
             ---
 
             ✅ **Code Signed & Notarized**: This app is signed with an Apple Developer ID and notarized by Apple
-            
+
             **No Gatekeeper warnings** - Double-click to install and run seamlessly!
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
