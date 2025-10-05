@@ -29,7 +29,7 @@ class ServerManager {
             return
         }
         
-        let bundledPath = (resourcePath as NSString).appendingPathComponent("Resources/cli-proxy-api")
+        let bundledPath = (resourcePath as NSString).appendingPathComponent("cli-proxy-api")
         guard FileManager.default.fileExists(atPath: bundledPath) else {
             addLog("❌ Error: cli-proxy-api binary not found at \(bundledPath)")
             completion(false)
@@ -37,7 +37,7 @@ class ServerManager {
         }
         
         // Use bundled config
-        let configPath = (resourcePath as NSString).appendingPathComponent("Resources/config.yaml")
+        let configPath = (resourcePath as NSString).appendingPathComponent("config.yaml")
         guard FileManager.default.fileExists(atPath: configPath) else {
             addLog("❌ Error: config.yaml not found at \(configPath)")
             completion(false)
@@ -141,7 +141,7 @@ class ServerManager {
             return
         }
         
-        let bundledPath = (resourcePath as NSString).appendingPathComponent("Resources/cli-proxy-api")
+        let bundledPath = (resourcePath as NSString).appendingPathComponent("cli-proxy-api")
         guard FileManager.default.fileExists(atPath: bundledPath) else {
             completion(false, "Binary not found at \(bundledPath)")
             return
@@ -151,7 +151,7 @@ class ServerManager {
         authProcess.executableURL = URL(fileURLWithPath: bundledPath)
         
         // Get the config path
-        let configPath = (resourcePath as NSString).appendingPathComponent("Resources/config.yaml")
+        let configPath = (resourcePath as NSString).appendingPathComponent("config.yaml")
         
         switch command {
         case .claudeLogin:
