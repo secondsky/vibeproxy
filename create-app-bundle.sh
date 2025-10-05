@@ -37,7 +37,15 @@ chmod +x "$APP_DIR/Contents/MacOS/CLIProxyMenuBar"
 
 # Copy resources
 echo -e "${BLUE}Copying resources...${NC}"
-cp -r "$SRC_DIR/Sources/Resources" "$APP_DIR/Contents/Resources/"
+cp -r "$SRC_DIR/Sources/Resources/"* "$APP_DIR/Contents/Resources/"
+
+# Verify critical files were copied
+if [ ! -f "$APP_DIR/Contents/Resources/cli-proxy-api" ]; then
+    echo -e "${YELLOW}⚠️ WARNING: cli-proxy-api binary not found in bundle!${NC}"
+    ls -la "$APP_DIR/Contents/Resources/"
+    exit 1
+fi
+echo -e "${GREEN}✅ cli-proxy-api bundled: $(ls -lh "$APP_DIR/Contents/Resources/cli-proxy-api" | awk '{print $5}')${NC}"
 
 # Copy app icon
 if [ -f "$SRC_DIR/Sources/Resources/AppIcon.icns" ]; then
