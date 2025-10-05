@@ -61,27 +61,27 @@ jobs:
 
       # Optional: Notarize the app for seamless installation
       # Requires: APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_SPECIFIC_PASSWORD secrets
+      # Uncomment to enable notarization:
       # - name: Notarize App
-      #   if: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
       #   run: |
-          # Create a ZIP for notarization
-          ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
-
-          # Submit for notarization
-          xcrun notarytool submit "VibeProxy-notarize.zip" \
-            --apple-id "${{ secrets.APPLE_ID }}" \
-            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
-            --wait
-
-          # Staple the notarization ticket
-          xcrun stapler staple "VibeProxy.app"
-
-          # Verify stapling
-          xcrun stapler validate "VibeProxy.app"
-
-          # Remove the notarization ZIP
-          rm "VibeProxy-notarize.zip"
+      #     # Create a ZIP for notarization
+      #     ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
+      #     
+      #     # Submit for notarization
+      #     xcrun notarytool submit "VibeProxy-notarize.zip" \
+      #       --apple-id "${{ secrets.APPLE_ID }}" \
+      #       --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+      #       --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+      #       --wait
+      #     
+      #     # Staple the notarization ticket
+      #     xcrun stapler staple "VibeProxy.app"
+      #     
+      #     # Verify stapling
+      #     xcrun stapler validate "VibeProxy.app"
+      #     
+      #     # Remove the notarization ZIP
+      #     rm "VibeProxy-notarize.zip"
 
       - name: Create DMG
         run: |
