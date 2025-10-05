@@ -28,13 +28,14 @@ jobs:
           p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
 
       # Install the provisioning profile (if needed for distribution)
-      - name: Install Provisioning Profile
-        if: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
-        run: |
-          PP_PATH=$RUNNER_TEMP/profile.provisionprofile
-          echo -n "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o $PP_PATH
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+      # Note: Not typically needed for Developer ID distribution
+      # - name: Install Provisioning Profile
+      #   if: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
+      #   run: |
+      #     PP_PATH=$RUNNER_TEMP/profile.provisionprofile
+      #     echo -n "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o $PP_PATH
+      #     mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+      #     cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Get version from tag
         id: get_version
@@ -48,7 +49,7 @@ jobs:
           CODESIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}
           APP_VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          chmod +x build.sh create-app-bundle.sh
+          chmod +x create-app-bundle.sh
           ./create-app-bundle.sh
 
       # Verify the signing
@@ -59,9 +60,10 @@ jobs:
           spctl -a -vvv -t install VibeProxy.app || echo "⚠️ Gatekeeper check failed (expected without notarization)"
 
       # Optional: Notarize the app for seamless installation
-      - name: Notarize App
-        if: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
-        run: |
+      # Requires: APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_SPECIFIC_PASSWORD secrets
+      # - name: Notarize App
+      #   if: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
+      #   run: |
           # Create a ZIP for notarization
           ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "VibeProxy-notarize.zip"
 
@@ -163,7 +165,6 @@ jobs:
             ---
 
             ✅ **Code Signed**: This app is signed with an Apple Developer ID
-            ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && '✅ **Notarized**: No Gatekeeper warnings!' || '⚠️ **Not Notarized**: You may need to right-click → Open on first launch' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
