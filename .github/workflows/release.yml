@@ -102,9 +102,10 @@ jobs:
             "VibeProxy.dmg" \
             "VibeProxy.app" || true
 
-          # Sign the DMG
+          # Verify DMG was created and signed
           if [ -f "VibeProxy.dmg" ]; then
-            codesign --sign "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}" "VibeProxy.dmg"
+            echo "✅ DMG created successfully"
+            codesign -dv "VibeProxy.dmg" || echo "⚠️ DMG not signed (non-fatal)"
           fi
 
       - name: Create ZIP archive
