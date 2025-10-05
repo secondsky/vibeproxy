@@ -108,7 +108,13 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
     # Remove any existing signatures first
     codesign --remove-signature "$APP_DIR/Contents/MacOS/CLIProxyMenuBar" 2>/dev/null || true
     
-    # Sign the executable first with hardened runtime
+    # Sign the cli-proxy-api binary (required for notarization)
+    if [ -f "$APP_DIR/Contents/Resources/cli-proxy-api" ]; then
+        echo -e "${BLUE}Signing cli-proxy-api binary...${NC}"
+        codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/Resources/cli-proxy-api"
+    fi
+    
+    # Sign the main executable with hardened runtime
     codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/MacOS/CLIProxyMenuBar"
     
     # Then sign the entire app bundle
