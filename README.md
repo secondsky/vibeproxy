@@ -1,7 +1,7 @@
-# ProxyBar
+# VibeProxy
 
 <p align="center">
-  <img src="icon.png" width="128" height="128" alt="ProxyBar Icon">
+  <img src="icon.png" width="128" height="128" alt="VibeProxy Icon">
 </p>
 
 A native macOS menu bar application for managing [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) - the unified proxy server for AI services.
@@ -18,7 +18,7 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 
 <p align="center">
 <br>
-  <img src="screenshot.webp" width="400" height="400" alt="ProxyBar Screenshot">
+  <img src="screenshot.webp?v=1" width="600" height="380" alt="VibeProxy Screenshot">
 </p>
 
 ## Installation
@@ -39,17 +39,17 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 3. **Install**
    ```bash
    # Option 1: Move to Applications folder
-   mv ProxyBar.app /Applications/
+   mv "VibeProxy.app" /Applications/
 
    # Option 2: Run from current directory
-   open ProxyBar.app
+   open "VibeProxy.app"
    ```
 
 ## Usage
 
 ### First Launch
 
-1. Launch ProxyBar - you'll see a menu bar icon
+1. Launch VibeProxy - you'll see a menu bar icon
 2. Click the icon and select "Open Settings"
 3. The server will start automatically
 4. Click "Connect" for Codex or Claude Code to authenticate
@@ -59,14 +59,14 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 When you click "Connect":
 1. Your browser opens with the OAuth page
 2. Complete the authentication in the browser
-3. ProxyBar automatically detects your credentials
+3. VibeProxy automatically detects your credentials
 4. Status updates to show you're connected
 
 ### Server Management
 
 - **Toggle Server**: Click the status (Running/Stopped) to start/stop
 - **Menu Bar Icon**: Shows active/inactive state
-- **Launch at Login**: Toggle to start ProxyBar automatically
+- **Launch at Login**: Toggle to start VibeProxy automatically
 
 ## Requirements
 
@@ -94,7 +94,7 @@ make clean
 ### Project Structure
 
 ```
-ProxyBar/
+VibeProxy/
 ├── Sources/
 │   ├── main.swift              # App entry point
 │   ├── AppDelegate.swift       # Menu bar & window management
@@ -127,9 +127,9 @@ ProxyBar/
 
 ## Credits
 
-ProxyBar is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services.
+VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services.
 
-Special thanks to the CLIProxyAPI project for providing the core functionality that makes ProxyBar possible.
+Special thanks to the CLIProxyAPI project for providing the core functionality that makes VibeProxy possible.
 
 ## License
 

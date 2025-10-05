@@ -10,6 +10,12 @@ class ServerManager {
     
     var onLogUpdate: (([String]) -> Void)?
     
+    deinit {
+        // Ensure cleanup on deallocation
+        stop()
+        killOrphanedProcesses()
+    }
+    
     func start(completion: @escaping (Bool) -> Void) {
         guard !isRunning else {
             completion(true)
@@ -93,12 +99,37 @@ class ServerManager {
     func stop() {
         guard isRunning else { return }
         
-        process?.terminate()
-        process = nil
+        guard let process = process else {
+            DispatchQueue.main.async {
+                self.isRunning = false
+            }
+            return
+        }
+        
+        let pid = process.processIdentifier
+        addLog("Stopping server (PID: \(pid))...")
+        
+        // First try graceful termination (SIGTERM)
+        process.terminate()
+        
+        // Wait up to 2 seconds for graceful termination
+        let deadline = Date().addingTimeInterval(2.0)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        
+        // If still running, force kill (SIGKILL)
+        if process.isRunning {
+            addLog("⚠️ Server didn't stop gracefully, force killing...")
+            kill(pid, SIGKILL)
+            Thread.sleep(forTimeInterval: 0.5) // Give it a moment to die
+        }
+        
+        self.process = nil
         DispatchQueue.main.async {
             self.isRunning = false
         }
-        addLog("Server stopped")
+        addLog("✓ Server stopped")
         
         NotificationCenter.default.post(name: NSNotification.Name("ServerStatusChanged"), object: nil)
     }
@@ -200,6 +231,23 @@ class ServerManager {
     
     func getLogs() -> [String] {
         return logBuffer
+    }
+    
+    /// Kill any orphaned cli-proxy-api processes that might be running
+    private func killOrphanedProcesses() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        task.arguments = ["-f", "cli-proxy-api"]
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            if task.terminationStatus == 0 {
+                addLog("✓ Cleaned up orphaned processes")
+            }
+        } catch {
+            // Silently fail - pkill might not find anything
+        }
     }
 }
 

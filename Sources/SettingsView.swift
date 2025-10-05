@@ -11,7 +11,7 @@ struct SettingsView: View {
     @State private var authResultMessage = ""
     @State private var authResultSuccess = false
     @State private var fileMonitor: DispatchSourceFileSystemObject?
-    
+
     var body: some View {
         VStack(spacing: 0) {
             Form {
@@ -36,13 +36,13 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                
+
                 Section {
                     Toggle("Launch at login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { newValue in
                             toggleLaunchAtLogin(newValue)
                         }
-                    
+
                     HStack {
                         Text("Auth files")
                         Spacer()
@@ -51,7 +51,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+
                 Section("Services") {
                 HStack {
                     if let resourcePath = Bundle.main.resourcePath {
@@ -98,7 +98,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+
                 HStack {
                     if let resourcePath = Bundle.main.resourcePath {
                         let imagePath = (resourcePath as NSString).appendingPathComponent("Resources/icon-claude.png")
@@ -148,14 +148,14 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
             .scrollDisabled(true)
-            
+
             Spacer()
                 .frame(height: 12)
-            
+
             // Footer outside Form
             VStack(spacing: 4) {
                 HStack(spacing: 4) {
-                    Text("ProxyBar was made possible thanks to")
+                    Text("VibeProxy was made possible thanks to")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Link("CLIProxyAPI", destination: URL(string: "https://github.com/router-for-me/CLIProxyAPI")!)
@@ -176,7 +176,7 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 HStack(spacing: 4) {
                     Text("© 2025")
                         .font(.caption)
@@ -196,7 +196,7 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Link("Report an issue", destination: URL(string: "https://github.com/automazeio/proxybar/issues")!)
                     .font(.caption)
                     .onHover { inside in
@@ -224,12 +224,12 @@ struct SettingsView: View {
             Text(authResultMessage)
         }
     }
-    
+
     private func openAuthFolder() {
         let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
         NSWorkspace.shared.open(authDir)
     }
-    
+
     private func toggleLaunchAtLogin(_ enabled: Bool) {
         if #available(macOS 13.0, *) {
             do {
@@ -243,22 +243,22 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private func checkLaunchAtLogin() {
         if #available(macOS 13.0, *) {
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
-    
+
     private func connectClaudeCode() {
         isAuthenticatingClaude = true
         NSLog("[SettingsView] Starting Claude Code authentication")
-        
+
         serverManager.runAuthCommand(.claudeLogin) { success, output in
             NSLog("[SettingsView] Auth completed - success: %d, output: %@", success, output)
             DispatchQueue.main.async {
                 self.isAuthenticatingClaude = false
-                
+
                 if success {
                     self.authResultSuccess = true
                     self.authResultMessage = "✓ Claude Code authenticated successfully!\n\nPlease complete the authentication in your browser, then the app will automatically detect your credentials."
@@ -272,17 +272,17 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private func disconnectClaudeCode() {
         let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
-        
+
         // Stop server before modifying auth files
         let wasRunning = serverManager.isRunning
         if wasRunning {
             serverManager.stop()
             Thread.sleep(forTimeInterval: 0.5)
         }
-        
+
         do {
             let files = try FileManager.default.contentsOfDirectory(at: authDir, includingPropertiesForKeys: nil)
             for file in files where file.pathExtension == "json" {
@@ -293,14 +293,14 @@ struct SettingsView: View {
                     // Actually delete the file (not rename)
                     try FileManager.default.removeItem(at: file)
                     NSLog("[Disconnect] Deleted auth file: %@", file.path)
-                    
+
                     // Restart server if it was running
                     if wasRunning {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             serverManager.start { _ in }
                         }
                     }
-                    
+
                     authResultMessage = "Claude Code disconnected successfully"
                     showingAuthResult = true
                     break
@@ -309,7 +309,7 @@ struct SettingsView: View {
         } catch {
             authResultMessage = "Failed to disconnect: \(error.localizedDescription)"
             showingAuthResult = true
-            
+
             // Restart server if it was running
             if wasRunning {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -318,16 +318,16 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private func connectCodex() {
         isAuthenticatingCodex = true
         NSLog("[SettingsView] Starting Codex authentication")
-        
+
         serverManager.runAuthCommand(.codexLogin) { success, output in
             NSLog("[SettingsView] Auth completed - success: %d, output: %@", success, output)
             DispatchQueue.main.async {
                 self.isAuthenticatingCodex = false
-                
+
                 if success {
                     self.authResultSuccess = true
                     self.authResultMessage = "✓ Codex authenticated successfully!\n\nPlease complete the authentication in your browser, then the app will automatically detect your credentials."
@@ -341,17 +341,17 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private func disconnectCodex() {
         let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
-        
+
         // Stop server before modifying auth files
         let wasRunning = serverManager.isRunning
         if wasRunning {
             serverManager.stop()
             Thread.sleep(forTimeInterval: 0.5)
         }
-        
+
         do {
             let files = try FileManager.default.contentsOfDirectory(at: authDir, includingPropertiesForKeys: nil)
             for file in files where file.pathExtension == "json" {
@@ -362,14 +362,14 @@ struct SettingsView: View {
                     // Actually delete the file (not rename)
                     try FileManager.default.removeItem(at: file)
                     NSLog("[Disconnect] Deleted auth file: %@", file.path)
-                    
+
                     // Restart server if it was running
                     if wasRunning {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             serverManager.start { _ in }
                         }
                     }
-                    
+
                     authResultMessage = "Codex disconnected successfully"
                     showingAuthResult = true
                     break
@@ -378,7 +378,7 @@ struct SettingsView: View {
         } catch {
             authResultMessage = "Failed to disconnect: \(error.localizedDescription)"
             showingAuthResult = true
-            
+
             // Restart server if it was running
             if wasRunning {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -387,37 +387,37 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private func startMonitoringAuthDirectory() {
         let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
-        
+
         // Create directory if it doesn't exist
         try? FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
-        
+
         let fileDescriptor = open(authDir.path, O_EVTONLY)
         guard fileDescriptor >= 0 else { return }
-        
+
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fileDescriptor,
             eventMask: [.write, .delete, .rename],
             queue: DispatchQueue.main
         )
-        
+
         let manager = authManager
         source.setEventHandler {
             // Refresh auth status when directory changes
             NSLog("[FileMonitor] Auth directory changed - refreshing status")
             manager.checkAuthStatus()
         }
-        
+
         source.setCancelHandler {
             close(fileDescriptor)
         }
-        
+
         source.resume()
         fileMonitor = source
     }
-    
+
     private func stopMonitoringAuthDirectory() {
         fileMonitor?.cancel()
         fileMonitor = nil

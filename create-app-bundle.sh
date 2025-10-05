@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_NAME="ProxyBar"
+APP_NAME="VibeProxy"
 BUNDLE_ID="com.cliproxyapi.menubar"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_DIR="$PROJECT_DIR/$APP_NAME.app"

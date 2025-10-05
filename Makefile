@@ -19,22 +19,22 @@ release: ## Build the Swift executable (release)
 app: ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."
 	@./create-app-bundle.sh
-	@echo "✅ App bundle created: CLI Proxy API.app"
+	@echo "✅ App bundle created: VibeProxy.app"
 
 install: app ## Build and install to /Applications
 	@echo "📲 Installing to /Applications..."
-	@rm -rf "/Applications/CLI Proxy API.app"
-	@cp -r "CLI Proxy API.app" /Applications/
-	@echo "✅ Installed to /Applications/CLI Proxy API.app"
+	@rm -rf "/Applications/VibeProxy.app"
+	@cp -r "VibeProxy.app" /Applications/
+	@echo "✅ Installed to /Applications/VibeProxy.app"
 
 run: app ## Build and run the app
 	@echo "🚀 Launching app..."
-	@open "CLI Proxy API.app"
+	@open "VibeProxy.app"
 
 clean: ## Clean build artifacts
 	@echo "🧹 Cleaning..."
 	@rm -rf .build
-	@rm -rf "CLI Proxy API.app"
+	@rm -rf "VibeProxy.app"
 	@rm -rf Sources/Resources/cli-proxy-api
 	@rm -rf Sources/Resources/config.yaml
 	@rm -rf Sources/Resources/static
@@ -58,15 +58,15 @@ info: ## Show project information
 	@tree -L 2 -I ".build" || echo "  (install 'tree' for better output)"
 
 open: ## Open app bundle to inspect contents
-	@if [ -d "CLI Proxy API.app" ]; then \
-		open "CLI Proxy API.app"; \
+	@if [ -d "VibeProxy.app" ]; then \
+		open "VibeProxy.app"; \
 	else \
 		echo "❌ App bundle not found. Run 'make app' first."; \
 	fi
 
 edit-config: ## Edit the bundled config.yaml
-	@if [ -d "CLI Proxy API.app" ]; then \
-		open -e "CLI Proxy API.app/Contents/Resources/config.yaml"; \
+	@if [ -d "VibeProxy.app" ]; then \
+		open -e "VibeProxy.app/Contents/Resources/config.yaml"; \
 	else \
 		echo "❌ App bundle not found. Run 'make app' first."; \
 	fi
