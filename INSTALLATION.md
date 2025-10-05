@@ -1,5 +1,7 @@
 # Installing VibeProxy
 
+**⚠️ Requirements:** macOS running on **Apple Silicon only** (M1/M2/M3/M4 Macs). Intel Macs are not supported.
+
 ## Option 1: Download Pre-built Release (Recommended)
 
 ### Step 1: Download
