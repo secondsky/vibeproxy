@@ -35,17 +35,20 @@ echo -e "${BLUE}Copying executable...${NC}"
 cp "$BUILD_DIR/CLIProxyMenuBar" "$APP_DIR/Contents/MacOS/"
 chmod +x "$APP_DIR/Contents/MacOS/CLIProxyMenuBar"
 
-# Copy resources
+# Copy resources (copy contents, not the folder itself)
 echo -e "${BLUE}Copying resources...${NC}"
 # List what we're about to copy
 echo "Resources to copy:"
 ls -lh "$SRC_DIR/Sources/Resources/"
 
-# Copy each file/directory from Resources to Contents/Resources
+# Copy each file/directory from Resources/* directly to Contents/Resources/
 if [ -d "$SRC_DIR/Sources/Resources" ]; then
-    cp -r "$SRC_DIR/Sources/Resources/"* "$APP_DIR/Contents/Resources/" 2>/dev/null || true
-    # Also copy hidden files if any
-    cp -r "$SRC_DIR/Sources/Resources/".* "$APP_DIR/Contents/Resources/" 2>/dev/null || true
+    # Use a loop to copy each item to avoid nested Resources folder
+    for item in "$SRC_DIR/Sources/Resources/"*; do
+        if [ -e "$item" ]; then
+            cp -r "$item" "$APP_DIR/Contents/Resources/"
+        fi
+    done
 fi
 
 # Verify critical files were copied
