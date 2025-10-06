@@ -2,23 +2,6 @@
 
 A simplified guide for using Factory CLI (Droid) with your personal Claude and ChatGPT subscriptions through VibeProxy.
 
-> [!WARNING]
-> **⚠️ IMPORTANT DISCLAIMER**
->
-> **By using this method, you acknowledge and accept the following:**
->
-> - **Terms of Service Risk**: This approach may violate the Terms of Service of AI model providers (Anthropic, OpenAI, etc.). You are solely responsible for ensuring compliance with all applicable terms and policies.
->
-> - **Account Risk**: Model providers may detect this usage pattern and take punitive action, including but not limited to account suspension, permanent ban, or loss of access to paid subscriptions.
->
-> - **No Guarantees**: Providers may change their APIs, authentication mechanisms, or policies at any time, rendering this method inoperable without notice.
->
-> - **Assumption of Risk**: By proceeding, you assume all legal, financial, and technical risks. The authors and contributors of this guide and CLIProxyAPI bear no responsibility for any consequences arising from your use of this method.
->
-> **Use at your own risk. Proceed only if you understand and accept these risks.**
-
----
-
 ## What is This?
 
 This guide shows you how to use [Factory CLI](https://app.factory.ai/r/FM8BJHFQ) with your personal Claude Code Pro/Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxy acts as a bridge that handles authentication and routing automatically.
@@ -205,6 +188,21 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 - VibeProxy only binds to localhost (127.0.0.1)
 - All upstream traffic uses HTTPS
 - Tokens are auto-refreshed before expiration
+
+---
+
+> [!WARNING]
+> <br>**By using this VibeProxy, you acknowledge and accept the following:**
+>
+> - **Terms of Service Risk**: This approach may violate the Terms of Service of AI model providers (Anthropic, OpenAI, etc.). You are solely responsible for ensuring compliance with all applicable terms and policies.
+>
+> - **Account Risk**: Model providers may detect this usage pattern and take punitive action, including but not limited to account suspension, permanent ban, or loss of access to paid subscriptions.
+>
+> - **No Guarantees**: Providers may change their APIs, authentication mechanisms, or policies at any time, rendering this method inoperable without notice.
+>
+> - **Assumption of Risk**: By proceeding, you assume all legal, financial, and technical risks. The authors and contributors of this guide and CLIProxyAPI bear no responsibility for any consequences arising from your use of this method.
+>
+> **Use at your own risk. Proceed only if you understand and accept these risks.**
 
 ---
 
