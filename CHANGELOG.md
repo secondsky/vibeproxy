@@ -5,6 +5,14 @@ All notable changes to VibeProxy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-10-06
+
+### Fixed
+- **Orphaned Process Cleanup** - App now automatically kills any orphaned server processes on startup
+  - Prevents "port already in use" errors after app crashes
+  - Detects and logs PIDs of orphaned processes before cleanup
+  - Ensures clean server restart after unexpected app termination
+
 ## [1.0.1] - 2025-10-06
 
 ### Fixed
@@ -52,5 +60,6 @@ All future changes will be documented here before release.
 
 ---
 
+[1.0.2]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.2
 [1.0.1]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.1
 [1.0.0]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.0

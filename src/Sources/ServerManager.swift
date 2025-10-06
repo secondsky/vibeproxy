@@ -22,6 +22,9 @@ class ServerManager {
             return
         }
         
+        // Clean up any orphaned processes from previous crashes
+        killOrphanedProcesses()
+        
         // Use bundled binary from app bundle
         guard let resourcePath = Bundle.main.resourcePath else {
             addLog("❌ Error: Could not find resource path")
@@ -235,18 +238,44 @@ class ServerManager {
     
     /// Kill any orphaned cli-proxy-api processes that might be running
     private func killOrphanedProcesses() {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        task.arguments = ["-f", "cli-proxy-api"]
+        // First check if any processes exist using pgrep
+        let checkTask = Process()
+        checkTask.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        checkTask.arguments = ["-f", "cli-proxy-api"]
+        
+        let outputPipe = Pipe()
+        checkTask.standardOutput = outputPipe
+        checkTask.standardError = Pipe() // Suppress errors
         
         do {
-            try task.run()
-            task.waitUntilExit()
-            if task.terminationStatus == 0 {
-                addLog("✓ Cleaned up orphaned processes")
+            try checkTask.run()
+            checkTask.waitUntilExit()
+            
+            // If pgrep found processes (exit code 0), kill them
+            if checkTask.terminationStatus == 0 {
+                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+                let pids = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
+                
+                if !pids.isEmpty {
+                    addLog("⚠️ Found orphaned server process(es): \(pids.joined(separator: ", "))")
+                    
+                    // Now kill them
+                    let killTask = Process()
+                    killTask.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+                    killTask.arguments = ["-9", "-f", "cli-proxy-api"]
+                    
+                    try killTask.run()
+                    killTask.waitUntilExit()
+                    
+                    // Wait a moment for cleanup
+                    Thread.sleep(forTimeInterval: 0.5)
+                    addLog("✓ Cleaned up orphaned processes")
+                }
             }
+            // Exit code 1 means no processes found - this is fine, no need to log
         } catch {
-            // Silently fail - pkill might not find anything
+            // Silently fail - this is not critical
         }
     }
 }
