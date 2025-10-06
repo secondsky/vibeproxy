@@ -5,7 +5,17 @@ All notable changes to VibeProxy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-01-05
+## [1.0.1] - 2025-10-06
+
+### Fixed
+- Service icons (Codex and Claude Code) now display correctly in Settings view
+- All resource paths corrected to work with bundled app structure
+
+### Documentation
+- Added Apple Silicon (M1/M2/M3/M4) requirement to README and installation guide
+- Clarified that Intel Macs are not supported
+
+## [1.0.0] - 2025-10-05
 
 Initial release of VibeProxy - a native macOS menu bar application for managing CLIProxyAPI.
 
@@ -32,6 +42,7 @@ Initial release of VibeProxy - a native macOS menu bar application for managing 
 ### Requirements
 
 - macOS 13.0 (Ventura) or later
+- Apple Silicon (M1/M2/M3/M4) - Intel Macs are not supported
 
 ---
 
@@ -41,4 +52,5 @@ All future changes will be documented here before release.
 
 ---
 
-[1.0.0]: https://github.com/automazeio/proxybar/releases/tag/v1.0.0
+[1.0.1]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.1
+[1.0.0]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.0
