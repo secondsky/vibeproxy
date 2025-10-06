@@ -18,7 +18,7 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 
 <p align="center">
 <br>
-  <img src="screenshot.webp?v=1" width="600" height="380" alt="VibeProxy Screenshot">
+  <img src="screenshot.webp?v=1.0.1" width="600" height="380" alt="VibeProxy Screenshot">
 </p>
 
 > [!TIP]
