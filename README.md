@@ -10,7 +10,7 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 
 <p align="center">
 <br>
-  <a href="https://www.loom.com/share/5cf54acfc55049afba725ab443dd3777"><img src="vibeproxy-video.webp" width="600" height="380" alt="VibeProxy Screenshot" border="0"></a>
+  <a href="https://www.loom.com/share/5cf54acfc55049afba725ab443dd3777"><img src="vibeproxy-video.webp?v=2" width="600" height="380" alt="VibeProxy Screenshot" border="0"></a>
 </p>
 
 > [!TIP]
