@@ -63,7 +63,7 @@ struct SettingsView: View {
                 Section("Services") {
                 HStack {
                     if let resourcePath = Bundle.main.resourcePath {
-                        let imagePath = (resourcePath as NSString).appendingPathComponent("Resources/icon-codex.png")
+                        let imagePath = (resourcePath as NSString).appendingPathComponent("icon-codex.png")
                         if let nsImage = NSImage(contentsOfFile: imagePath) {
                             Image(nsImage: nsImage)
                                 .resizable()
@@ -109,7 +109,7 @@ struct SettingsView: View {
 
                 HStack {
                     if let resourcePath = Bundle.main.resourcePath {
-                        let imagePath = (resourcePath as NSString).appendingPathComponent("Resources/icon-claude.png")
+                        let imagePath = (resourcePath as NSString).appendingPathComponent("icon-claude.png")
                         if let nsImage = NSImage(contentsOfFile: imagePath) {
                             Image(nsImage: nsImage)
                                 .resizable()
