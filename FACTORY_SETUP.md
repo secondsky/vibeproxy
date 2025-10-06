@@ -40,7 +40,7 @@ VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handle
 
 ## Step 1: Install VibeProxy
 
-1. **Download [VibeProxy.app](https://github.com/automazeio/vibeproxy)** from the releases page or build from source
+1. **Download [VibeProxy.app](https://github.com/automazeio/vibeproxy/releases)** from the releases page or build from source
 2. **Install**: Drag `VibeProxy.app` to your `/Applications` folder
 3. **Launch**: Open VibeProxy from Applications
    - If macOS blocks it: Right-click → Open, then click "Open" in the dialog
