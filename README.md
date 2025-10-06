@@ -4,7 +4,18 @@
   <img src="icon.png" width="128" height="128" alt="VibeProxy Icon">
 </p>
 
-A native macOS menu bar application for managing [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) - the unified proxy server for AI services.
+**Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code and ChatGPT subscriptions with powerful AI coding  tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
+
+Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
+
+<p align="center">
+<br>
+  <img src="vibeproxy.webp" width="600" height="380" alt="VibeProxy Screenshot">
+</p>
+
+> [!TIP]
+> Check out our [Factory Setup Guide](FACTORY_SETUP.md) for step-by-step instructions on how to use VibeProxy with Factory Droids.
+
 
 ## Features
 
@@ -16,17 +27,6 @@ A native macOS menu bar application for managing [CLIProxyAPI](https://github.co
 - 🎨 **Beautiful Icons** - Custom icons with dark mode support
 - 💾 **Self-Contained** - Everything bundled inside the .app (server binary, config, static files)
 
-<p align="center">
-<br>
-  <img src="vibeproxy.webp" width="600" height="380" alt="VibeProxy Screenshot">
-</p>
-
-> [!TIP]
-> **Use VibeProxy with Factory AI!**
->
-> Connect your Claude Code and ChatGPT subscriptions to [Factory Droids](https://app.factory.ai/r/FM8BJHFQ) to unlock powerful AI coding assistants without paying for separate API access.
->
-> 📖 Check out our [Factory Setup Guide](FACTORY_SETUP.md) for step-by-step instructions.
 
 ## Installation
 
