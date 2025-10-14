@@ -66,22 +66,22 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
       "provider": "anthropic"
     },
     {
-      "model_display_name": "CC: Sonnet 4.5 (Low Thinking)",
-      "model": "claude-sonnet-4-5-20250929-thinking-low",
+      "model_display_name": "CC: Sonnet 4.5 (Think)",
+      "model": "claude-sonnet-4-5-20250929-thinking-4000",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
     {
-      "model_display_name": "CC: Sonnet 4.5 (Medium Thinking)",
-      "model": "claude-sonnet-4-5-20250929-thinking-medium",
+      "model_display_name": "CC: Sonnet 4.5 (Think Harder)",
+      "model": "claude-sonnet-4-5-20250929-thinking-10000",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
     {
-      "model_display_name": "CC: Sonnet 4.5 (High Thinking)",
-      "model": "claude-sonnet-4-5-20250929-thinking-high",
+      "model_display_name": "CC: Sonnet 4.5 (Ultra Think)",
+      "model": "claude-sonnet-4-5-20250929-thinking-32000",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
@@ -178,9 +178,11 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 - `claude-opus-4-1-20250805` - Claude Opus 4.1 (Most powerful)
 - `claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet (Latest)
 - **Extended Thinking Variants** (Claude 3.7+, Opus 4, Sonnet 4):
-  - `*-thinking-low` - 2,000 token thinking budget
-  - `*-thinking-medium` - 4,000 token thinking budget
-  - `*-thinking-high` - 8,000 token thinking budget
+  - `*-thinking-NUMBER` - Custom thinking token budget (e.g., `-thinking-5000`)
+  - Recommended presets:
+    - `*-thinking-4000` - "Think" mode (~4K tokens)
+    - `*-thinking-10000` - "Think harder" mode (~10K tokens)
+    - `*-thinking-32000` - "Ultra think" mode (~32K tokens)
 
 ### OpenAI Models
 - `gpt-5` - Standard GPT-5
@@ -216,19 +218,28 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 
 VibeProxy automatically adds extended thinking support for Claude models! Simply append a thinking suffix to any Claude model name:
 
-**Model Name Pattern**: `{model-name}-thinking-{level}`
+**Model Name Pattern**: `{model-name}-thinking-{NUMBER}`
 
-**Examples**:
-- `claude-sonnet-4-5-20250929-thinking-low` → 2,000 token budget
-- `claude-sonnet-4-5-20250929-thinking-medium` → 4,000 token budget
-- `claude-sonnet-4-5-20250929-thinking-high` → 8,000 token budget
+**Recommended Presets** (based on Anthropic's official guidelines):
+- `claude-sonnet-4-5-20250929-thinking-4000` → **"Think"** (~4K tokens)
+- `claude-sonnet-4-5-20250929-thinking-10000` → **"Think harder"** (~10K tokens)
+- `claude-sonnet-4-5-20250929-thinking-32000` → **"Ultra think"** (~32K tokens)
+
+**Custom Budgets**:
+You can specify any token budget number:
+- `claude-sonnet-4-5-20250929-thinking-2000` → 2,000 tokens
+- `claude-sonnet-4-5-20250929-thinking-16000` → 16,000 tokens
+- `claude-sonnet-4-5-20250929-thinking-50000` → 50,000 tokens
 
 **How It Works**:
 1. VibeProxy's thinking proxy intercepts requests on port 8317
-2. Recognizes the `-thinking-{level}` suffix
+2. Recognizes the `-thinking-{NUMBER}` suffix
 3. Strips the suffix from the model name
-4. Adds the `thinking` parameter with appropriate budget
+4. Adds the `thinking` parameter with the specified budget
 5. Forwards the modified request to CLIProxyAPI
+
+**Invalid Suffix Handling**:
+If the suffix is not a valid integer (e.g., `-thinking-blabla`), VibeProxy strips the suffix and uses the vanilla model without thinking.
 
 **What You'll See**:
 - Claude's step-by-step reasoning process before the final answer
