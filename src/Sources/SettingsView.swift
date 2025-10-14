@@ -11,6 +11,10 @@ struct SettingsView: View {
     @State private var authResultMessage = ""
     @State private var authResultSuccess = false
     @State private var fileMonitor: DispatchSourceFileSystemObject?
+    
+    private enum DisconnectTiming {
+        static let serverRestartDelay: TimeInterval = 0.3
+    }
 
     // Get app version from Info.plist
     private var appVersion: String {
@@ -62,14 +66,11 @@ struct SettingsView: View {
 
                 Section("Services") {
                 HStack {
-                    if let resourcePath = Bundle.main.resourcePath {
-                        let imagePath = (resourcePath as NSString).appendingPathComponent("icon-codex.png")
-                        if let nsImage = NSImage(contentsOfFile: imagePath) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .renderingMode(.template)
-                                .frame(width: 20, height: 20)
-                        }
+                    if let nsImage = IconCatalog.shared.image(named: "icon-codex.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .renderingMode(.template)
+                            .frame(width: 20, height: 20)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Codex")
@@ -108,14 +109,11 @@ struct SettingsView: View {
                 }
 
                 HStack {
-                    if let resourcePath = Bundle.main.resourcePath {
-                        let imagePath = (resourcePath as NSString).appendingPathComponent("icon-claude.png")
-                        if let nsImage = NSImage(contentsOfFile: imagePath) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .renderingMode(.template)
-                                .frame(width: 20, height: 20)
-                        }
+                    if let nsImage = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .renderingMode(.template)
+                            .frame(width: 20, height: 20)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Claude Code")
@@ -282,48 +280,12 @@ struct SettingsView: View {
     }
 
     private func disconnectClaudeCode() {
-        let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
-
-        // Stop server before modifying auth files
-        let wasRunning = serverManager.isRunning
-        if wasRunning {
-            serverManager.stop()
-            Thread.sleep(forTimeInterval: 0.5)
-        }
-
-        do {
-            let files = try FileManager.default.contentsOfDirectory(at: authDir, includingPropertiesForKeys: nil)
-            for file in files where file.pathExtension == "json" {
-                if let data = try? Data(contentsOf: file),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let type = json["type"] as? String,
-                   type.lowercased() == "claude" {
-                    // Actually delete the file (not rename)
-                    try FileManager.default.removeItem(at: file)
-                    NSLog("[Disconnect] Deleted auth file: %@", file.path)
-
-                    // Restart server if it was running
-                    if wasRunning {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            serverManager.start { _ in }
-                        }
-                    }
-
-                    authResultMessage = "Claude Code disconnected successfully"
-                    showingAuthResult = true
-                    break
-                }
-            }
-        } catch {
-            authResultMessage = "Failed to disconnect: \(error.localizedDescription)"
-            showingAuthResult = true
-
-            // Restart server if it was running
-            if wasRunning {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    serverManager.start { _ in }
-                }
-            }
+        isAuthenticatingClaude = true
+        performDisconnect(for: "claude", serviceName: "Claude Code") { success, message in
+            self.isAuthenticatingClaude = false
+            self.authResultSuccess = success
+            self.authResultMessage = message
+            self.showingAuthResult = true
         }
     }
 
@@ -351,48 +313,12 @@ struct SettingsView: View {
     }
 
     private func disconnectCodex() {
-        let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
-
-        // Stop server before modifying auth files
-        let wasRunning = serverManager.isRunning
-        if wasRunning {
-            serverManager.stop()
-            Thread.sleep(forTimeInterval: 0.5)
-        }
-
-        do {
-            let files = try FileManager.default.contentsOfDirectory(at: authDir, includingPropertiesForKeys: nil)
-            for file in files where file.pathExtension == "json" {
-                if let data = try? Data(contentsOf: file),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let type = json["type"] as? String,
-                   type.lowercased() == "codex" {
-                    // Actually delete the file (not rename)
-                    try FileManager.default.removeItem(at: file)
-                    NSLog("[Disconnect] Deleted auth file: %@", file.path)
-
-                    // Restart server if it was running
-                    if wasRunning {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            serverManager.start { _ in }
-                        }
-                    }
-
-                    authResultMessage = "Codex disconnected successfully"
-                    showingAuthResult = true
-                    break
-                }
-            }
-        } catch {
-            authResultMessage = "Failed to disconnect: \(error.localizedDescription)"
-            showingAuthResult = true
-
-            // Restart server if it was running
-            if wasRunning {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    serverManager.start { _ in }
-                }
-            }
+        isAuthenticatingCodex = true
+        performDisconnect(for: "codex", serviceName: "Codex") { success, message in
+            self.isAuthenticatingCodex = false
+            self.authResultSuccess = success
+            self.authResultMessage = message
+            self.showingAuthResult = true
         }
     }
 
@@ -429,6 +355,71 @@ struct SettingsView: View {
     private func stopMonitoringAuthDirectory() {
         fileMonitor?.cancel()
         fileMonitor = nil
+    }
+
+    private func performDisconnect(for serviceType: String, serviceName: String, completion: @escaping (Bool, String) -> Void) {
+        let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
+        let wasRunning = serverManager.isRunning
+        let manager = serverManager
+
+        let cleanupWork: () -> Void = {
+            DispatchQueue.global(qos: .userInitiated).async {
+                var disconnectResult: (Bool, String)
+                
+                do {
+                    if let enumerator = FileManager.default.enumerator(
+                        at: authDir,
+                        includingPropertiesForKeys: [.isRegularFileKey],
+                        options: [.skipsHiddenFiles]
+                    ) {
+                        var targetURL: URL?
+                        
+                        for case let fileURL as URL in enumerator {
+                            guard fileURL.pathExtension == "json" else { continue }
+                            
+                            let data = try Data(contentsOf: fileURL, options: [.mappedIfSafe])
+                            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                                  let type = json["type"] as? String,
+                                  type.lowercased() == serviceType.lowercased() else {
+                                continue
+                            }
+                            
+                            targetURL = fileURL
+                            break
+                        }
+                        
+                        if let targetURL = targetURL {
+                            try FileManager.default.removeItem(at: targetURL)
+                            NSLog("[Disconnect] Deleted auth file: %@", targetURL.path)
+                            disconnectResult = (true, "\(serviceName) disconnected successfully")
+                        } else {
+                            disconnectResult = (false, "No \(serviceName) credentials were found.")
+                        }
+                    } else {
+                        disconnectResult = (false, "Unable to access credentials directory.")
+                    }
+                } catch {
+                    disconnectResult = (false, "Failed to disconnect \(serviceName): \(error.localizedDescription)")
+                }
+                
+                DispatchQueue.main.async {
+                    completion(disconnectResult.0, disconnectResult.1)
+                    if wasRunning {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + DisconnectTiming.serverRestartDelay) {
+                            manager.start { _ in }
+                        }
+                    }
+                }
+            }
+        }
+
+        if wasRunning {
+            serverManager.stop {
+                cleanupWork()
+            }
+        } else {
+            cleanupWork()
+        }
     }
 }
 
