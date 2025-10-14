@@ -8,6 +8,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     var menu: NSMenu!
     var settingsWindow: NSWindow?
     var serverManager: ServerManager!
+    var thinkingProxy: ThinkingProxy!
     private let notificationCenter = UNUserNotificationCenter.current()
     private var notificationPermissionGranted = false
 
@@ -17,6 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 
         // Initialize managers
         serverManager = ServerManager()
+        thinkingProxy = ThinkingProxy()
         
         // Warm commonly used icons to avoid first-use disk hits
         preloadIcons()
@@ -149,34 +151,71 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func startServer() {
-        serverManager.start { [weak self] success in
-            DispatchQueue.main.async {
-                if success {
-                    self?.updateMenuBarStatus()
-                    self?.showNotification(title: "Server Started", body: "VibeProxy is now running on port \(self?.serverManager.port ?? 8317)")
-                } else {
-                    self?.showNotification(title: "Server Failed", body: "Could not start the server")
+        // Start the thinking proxy first (port 8317)
+        thinkingProxy.start()
+        
+        // Poll for thinking proxy readiness with timeout
+        pollForProxyReadiness(attempts: 0, maxAttempts: 60, intervalMs: 50)
+    }
+    
+    private func pollForProxyReadiness(attempts: Int, maxAttempts: Int, intervalMs: Int) {
+        // Check if proxy is running
+        if thinkingProxy.isRunning {
+            // Success - proceed to start backend
+            serverManager.start { [weak self] success in
+                DispatchQueue.main.async {
+                    if success {
+                        self?.updateMenuBarStatus()
+                        // User always connects to 8317 (thinking proxy)
+                        self?.showNotification(title: "Server Started", body: "VibeProxy is now running")
+                    } else {
+                        // Backend failed - stop the proxy to keep state consistent
+                        self?.thinkingProxy.stop()
+                        self?.showNotification(title: "Server Failed", body: "Could not start backend server on port 8318")
+                    }
                 }
             }
+            return
+        }
+        
+        // Check if we've exceeded timeout
+        if attempts >= maxAttempts {
+            DispatchQueue.main.async { [weak self] in
+                // Clean up partially initialized proxy
+                self?.thinkingProxy.stop()
+                self?.showNotification(title: "Server Failed", body: "Could not start thinking proxy on port 8317 (timeout)")
+            }
+            return
+        }
+        
+        // Schedule next poll
+        let interval = Double(intervalMs) / 1000.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
+            self?.pollForProxyReadiness(attempts: attempts + 1, maxAttempts: maxAttempts, intervalMs: intervalMs)
         }
     }
 
     func stopServer() {
+        // Stop the thinking proxy first to stop accepting new requests
+        thinkingProxy.stop()
+        
+        // Then stop CLIProxyAPI backend
         serverManager.stop()
+        
         updateMenuBarStatus()
     }
 
     @objc func copyServerURL() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString("http://localhost:\(serverManager.port)", forType: .string)
+        pasteboard.setString("http://localhost:\(thinkingProxy.proxyPort)", forType: .string)
         showNotification(title: "Copied", body: "Server URL copied to clipboard")
     }
 
     @objc func updateMenuBarStatus() {
         // Update status items
         if let serverStatus = menu.item(at: 0) {
-            serverStatus.title = serverManager.isRunning ? "Server: Running (\(serverManager.port))" : "Server: Stopped"
+            serverStatus.title = serverManager.isRunning ? "Server: Running (port \(thinkingProxy.proxyPort))" : "Server: Stopped"
         }
 
         // Update button states
@@ -227,6 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     @objc func quit() {
         // Stop server and wait for cleanup before quitting
         if serverManager.isRunning {
+            thinkingProxy.stop()
             serverManager.stop()
         }
         // Give a moment for cleanup to complete
@@ -239,6 +279,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name("ServerStatusChanged"), object: nil)
         // Final cleanup - stop server if still running
         if serverManager.isRunning {
+            thinkingProxy.stop()
             serverManager.stop()
         }
     }
@@ -246,6 +287,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // If server is running, stop it first
         if serverManager.isRunning {
+            thinkingProxy.stop()
             serverManager.stop()
             // Give server time to stop (up to 3 seconds total with the improved stop method)
             return .terminateNow

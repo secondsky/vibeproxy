@@ -52,67 +52,100 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 {
   "custom_models": [
     {
+      "model_display_name": "CC: Opus 4.1",
       "model": "claude-opus-4-1-20250805",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
     {
+      "model_display_name": "CC: Sonnet 4.5",
       "model": "claude-sonnet-4-5-20250929",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
     {
-      "model": "gpt-5",
-      "base_url": "http://localhost:8317/v1",
+      "model_display_name": "CC: Sonnet 4.5 (Think)",
+      "model": "claude-sonnet-4-5-20250929-thinking-4000",
+      "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
-      "provider": "openai"
+      "provider": "anthropic"
     },
     {
-      "model": "gpt-5-minimal",
-      "base_url": "http://localhost:8317/v1",
+      "model_display_name": "CC: Sonnet 4.5 (Think Harder)",
+      "model": "claude-sonnet-4-5-20250929-thinking-10000",
+      "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
-      "provider": "openai"
+      "provider": "anthropic"
     },
     {
-      "model": "gpt-5-low",
-      "base_url": "http://localhost:8317/v1",
+      "model_display_name": "CC: Sonnet 4.5 (Ultra Think)",
+      "model": "claude-sonnet-4-5-20250929-thinking-32000",
+      "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
-      "provider": "openai"
+      "provider": "anthropic"
     },
+
     {
-      "model": "gpt-5-medium",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model": "gpt-5-high",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
+      "model_display_name": "GPT-5 Codex",
       "model": "gpt-5-codex",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
+      "model_display_name": "GPT-5 Codex (Low)",
       "model": "gpt-5-codex-low",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
+      "model_display_name": "GPT-5 Codex (Medium)",
       "model": "gpt-5-codex-medium",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
+      "model_display_name": "GPT-5 Codex (High)",
       "model": "gpt-5-codex-high",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5",
+      "model": "gpt-5",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (Minimal)",
+      "model": "gpt-5-minimal",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (Low)",
+      "model": "gpt-5-low",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (Medium)",
+      "model": "gpt-5-medium",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (High)",
+      "model": "gpt-5-high",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
@@ -144,6 +177,12 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 ### Claude Models
 - `claude-opus-4-1-20250805` - Claude Opus 4.1 (Most powerful)
 - `claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet (Latest)
+- **Extended Thinking Variants** (Claude 3.7+, Opus 4, Sonnet 4):
+  - `*-thinking-NUMBER` - Custom thinking token budget (e.g., `-thinking-5000`)
+  - Recommended presets:
+    - `*-thinking-4000` - "Think" mode (~4K tokens)
+    - `*-thinking-10000` - "Think harder" mode (~10K tokens)
+    - `*-thinking-32000` - "Ultra think" mode (~32K tokens)
 
 ### OpenAI Models
 - `gpt-5` - Standard GPT-5
@@ -174,6 +213,45 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 3. ✅ Factory CLI config has the custom models configured
 4. ✅ `droid` can select your custom models
 5. ✅ Test with a simple prompt: "what day is it?"
+
+## Extended Thinking Mode
+
+VibeProxy automatically adds extended thinking support for Claude models! Simply append a thinking suffix to any Claude model name:
+
+**Model Name Pattern**: `{model-name}-thinking-{NUMBER}`
+
+**Recommended Presets** (based on Anthropic's official guidelines):
+- `claude-sonnet-4-5-20250929-thinking-4000` → **"Think"** (~4K tokens)
+- `claude-sonnet-4-5-20250929-thinking-10000` → **"Think harder"** (~10K tokens)
+- `claude-sonnet-4-5-20250929-thinking-32000` → **"Ultra think"** (~32K tokens)
+
+**Custom Budgets**:
+You can specify any token budget number:
+- `claude-sonnet-4-5-20250929-thinking-2000` → 2,000 tokens
+- `claude-sonnet-4-5-20250929-thinking-16000` → 16,000 tokens
+- `claude-sonnet-4-5-20250929-thinking-50000` → 50,000 tokens
+
+**How It Works**:
+1. VibeProxy's thinking proxy intercepts requests on port 8317
+2. Recognizes the `-thinking-{NUMBER}` suffix
+3. Strips the suffix from the model name
+4. Adds the `thinking` parameter with the specified budget
+5. Forwards the modified request to CLIProxyAPI
+
+**Invalid Suffix Handling**:
+If the suffix is not a valid integer (e.g., `-thinking-blabla`), VibeProxy strips the suffix and uses the vanilla model without thinking.
+
+**What You'll See**:
+- Claude's step-by-step reasoning process before the final answer
+- More detailed analysis for complex problems
+- Transparent thought process in the response
+
+**Supported Models**:
+- Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`)
+- Claude Opus 4 (`claude-opus-4-*`)
+- Claude Sonnet 4 (`claude-sonnet-4-*`)
+
+This works seamlessly with Factory CLI - just select the thinking variant in your model selector!
 
 ## Tips
 
