@@ -8,6 +8,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     var menu: NSMenu!
     var settingsWindow: NSWindow?
     var serverManager: ServerManager!
+    var thinkingProxy: ThinkingProxy!
     private let notificationCenter = UNUserNotificationCenter.current()
     private var notificationPermissionGranted = false
 
@@ -17,6 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 
         // Initialize managers
         serverManager = ServerManager()
+        thinkingProxy = ThinkingProxy()
         
         // Warm commonly used icons to avoid first-use disk hits
         preloadIcons()
@@ -149,11 +151,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func startServer() {
+        // Start the thinking proxy first (port 8317)
+        thinkingProxy.start()
+        
+        // Then start CLIProxyAPI (port 8318)
         serverManager.start { [weak self] success in
             DispatchQueue.main.async {
                 if success {
                     self?.updateMenuBarStatus()
-                    self?.showNotification(title: "Server Started", body: "VibeProxy is now running on port \(self?.serverManager.port ?? 8317)")
+                    // User always connects to 8317 (thinking proxy)
+                    self?.showNotification(title: "Server Started", body: "VibeProxy is now running on port 8317")
                 } else {
                     self?.showNotification(title: "Server Failed", body: "Could not start the server")
                 }
@@ -162,7 +169,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func stopServer() {
+        // Stop CLIProxyAPI first
         serverManager.stop()
+        
+        // Then stop the thinking proxy
+        thinkingProxy.stop()
+        
         updateMenuBarStatus()
     }
 

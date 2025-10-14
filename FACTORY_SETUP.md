@@ -65,6 +65,27 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
+    {
+      "model_display_name": "CC: Sonnet 4.5 (Low Thinking)",
+      "model": "claude-sonnet-4-5-20250929-thinking-low",
+      "base_url": "http://localhost:8317",
+      "api_key": "dummy-not-used",
+      "provider": "anthropic"
+    },
+    {
+      "model_display_name": "CC: Sonnet 4.5 (Medium Thinking)",
+      "model": "claude-sonnet-4-5-20250929-thinking-medium",
+      "base_url": "http://localhost:8317",
+      "api_key": "dummy-not-used",
+      "provider": "anthropic"
+    },
+    {
+      "model_display_name": "CC: Sonnet 4.5 (High Thinking)",
+      "model": "claude-sonnet-4-5-20250929-thinking-high",
+      "base_url": "http://localhost:8317",
+      "api_key": "dummy-not-used",
+      "provider": "anthropic"
+    },
 
     {
       "model_display_name": "GPT-5 Codex",
@@ -156,7 +177,10 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 ### Claude Models
 - `claude-opus-4-1-20250805` - Claude Opus 4.1 (Most powerful)
 - `claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet (Latest)
-  - Supports extended thinking mode (see Advanced section below)
+- **Extended Thinking Variants** (Claude 3.7+, Opus 4, Sonnet 4):
+  - `*-thinking-low` - 2,000 token thinking budget
+  - `*-thinking-medium` - 4,000 token thinking budget
+  - `*-thinking-high` - 8,000 token thinking budget
 
 ### OpenAI Models
 - `gpt-5` - Standard GPT-5
@@ -188,31 +212,35 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 4. ✅ `droid` can select your custom models
 5. ✅ Test with a simple prompt: "what day is it?"
 
-## Advanced: Extended Thinking Mode
+## Extended Thinking Mode
 
-Claude models support **extended thinking mode**, which allows them to show their reasoning process. This is controlled via API parameters, not model selection.
+VibeProxy automatically adds extended thinking support for Claude models! Simply append a thinking suffix to any Claude model name:
 
-**Note**: Factory CLI's custom model config doesn't support passing the `thinking` parameter directly. Extended thinking would need to be configured at the application level or by using a proxy that adds these parameters.
+**Model Name Pattern**: `{model-name}-thinking-{level}`
 
-If you're making direct API calls through VibeProxy (e.g., via curl or custom code):
+**Examples**:
+- `claude-sonnet-4-5-20250929-thinking-low` → 2,000 token budget
+- `claude-sonnet-4-5-20250929-thinking-medium` → 4,000 token budget
+- `claude-sonnet-4-5-20250929-thinking-high` → 8,000 token budget
 
-```bash
-curl http://localhost:8317/v1/messages \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-sonnet-4-5-20250929",
-    "thinking": {"type": "enabled", "budget_tokens": 4000},
-    "max_tokens": 10000,
-    "messages": [{"role": "user", "content": "Your question"}]
-  }' | gunzip
-```
+**How It Works**:
+1. VibeProxy's thinking proxy intercepts requests on port 8317
+2. Recognizes the `-thinking-{level}` suffix
+3. Strips the suffix from the model name
+4. Adds the `thinking` parameter with appropriate budget
+5. Forwards the modified request to CLIProxyAPI
 
-**Thinking budgets**:
-- Low: 2,000 tokens
-- Medium: 4,000 tokens  
-- High: 8,000 tokens
+**What You'll See**:
+- Claude's step-by-step reasoning process before the final answer
+- More detailed analysis for complex problems
+- Transparent thought process in the response
 
-The response will include a `thinking` content block showing Claude's reasoning before the final answer.
+**Supported Models**:
+- Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`)
+- Claude Opus 4 (`claude-opus-4-*`)
+- Claude Sonnet 4 (`claude-sonnet-4-*`)
+
+This works seamlessly with Factory CLI - just select the thinking variant in your model selector!
 
 ## Tips
 

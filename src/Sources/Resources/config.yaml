@@ -1,5 +1,5 @@
-# Server port (use any available port)
-port: 8317
+# Server port (CLIProxyAPI runs on 8318, ThinkingProxy forwards from 8317)
+port: 8318
 
 # Management API settings
 remote-management:
