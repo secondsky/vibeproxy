@@ -89,6 +89,14 @@ class ThinkingProxy {
      Accumulates data until full request is received (handles large payloads)
      */
     private func receiveRequest(from connection: NWConnection, accumulatedData: Data = Data()) {
+        // Start the iterative receive loop
+        receiveNextChunk(from: connection, accumulatedData: accumulatedData)
+    }
+    
+    /**
+     Receives request data iteratively (uses async scheduling instead of recursion to avoid stack buildup)
+     */
+    private func receiveNextChunk(from connection: NWConnection, accumulatedData: Data) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 1048576) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
             
@@ -122,9 +130,9 @@ class ThinkingProxy {
                         let bodyStartIndex = headerEndIndex
                         let currentBodyLength = newAccumulatedData.count - bodyStartIndex
                         
-                        // If we haven't received the full body yet, keep receiving
+                        // If we haven't received the full body yet, schedule next iteration
                         if currentBodyLength < contentLength {
-                            self.receiveRequest(from: connection, accumulatedData: newAccumulatedData)
+                            self.receiveNextChunk(from: connection, accumulatedData: newAccumulatedData)
                             return
                         }
                     }
@@ -133,8 +141,8 @@ class ThinkingProxy {
                 // We have a complete request, process it
                 self.processRequest(data: newAccumulatedData, connection: connection)
             } else if !isComplete {
-                // Haven't found header end yet, keep receiving
-                self.receiveRequest(from: connection, accumulatedData: newAccumulatedData)
+                // Haven't found header end yet, schedule next iteration
+                self.receiveNextChunk(from: connection, accumulatedData: newAccumulatedData)
             } else {
                 // Complete but malformed, process what we have
                 self.processRequest(data: newAccumulatedData, connection: connection)
@@ -358,8 +366,17 @@ class ThinkingProxy {
     
     /**
      Receives response from CLIProxyAPI
+     Starts the streaming loop for response data
      */
     private func receiveResponse(from targetConnection: NWConnection, originalConnection: NWConnection, forceConnectionClose: Bool) {
+        // Start the streaming loop
+        streamNextChunk(from: targetConnection, to: originalConnection, forceConnectionClose: forceConnectionClose)
+    }
+    
+    /**
+     Streams response chunks iteratively (uses async scheduling instead of recursion to avoid stack buildup)
+     */
+    private func streamNextChunk(from targetConnection: NWConnection, to originalConnection: NWConnection, forceConnectionClose: Bool) {
         targetConnection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
             
@@ -371,7 +388,7 @@ class ThinkingProxy {
             }
             
             if let data = data, !data.isEmpty {
-                // Forward response to original client
+                // Forward response chunk to original client
                 originalConnection.send(content: data, completion: .contentProcessed({ sendError in
                     if let sendError = sendError {
                         NSLog("[ThinkingProxy] Send response error: \(sendError)")
@@ -385,8 +402,8 @@ class ThinkingProxy {
                             }))
                         }
                     } else {
-                        // Continue receiving
-                        self.receiveResponse(from: targetConnection, originalConnection: originalConnection, forceConnectionClose: forceConnectionClose)
+                        // Schedule next iteration of the streaming loop
+                        self.streamNextChunk(from: targetConnection, to: originalConnection, forceConnectionClose: forceConnectionClose)
                     }
                 }))
             } else if isComplete {
