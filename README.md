@@ -18,6 +18,9 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 > [!IMPORTANT]
 > **NEW: Gemini Support! 🎉** VibeProxy now supports Google's Gemini AI with full OAuth authentication. Connect your Google account and use Gemini with your favorite AI coding tools!
 
+> [!IMPORTANT]
+> **NEW: Extended Thinking Support! 🧠** VibeProxy now supports Claude's extended thinking feature with dynamic budgets (4K, 10K, 32K tokens). Use model names like `claude-sonnet-4-5-20250929-thinking-10000` to enable extended thinking. See the [Factory Setup Guide](FACTORY_SETUP.md#step-3-configure-factory-cli) for details.
+
 <p align="center">
 <br>
   <a href="https://www.loom.com/share/5cf54acfc55049afba725ab443dd3777"><img src="vibeproxy-factory-video.webp" width="600" height="380" alt="VibeProxy Screenshot" border="0"></a>
