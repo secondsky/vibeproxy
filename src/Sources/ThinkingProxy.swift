@@ -328,9 +328,8 @@ class ThinkingProxy {
                 
                 // Override Host header
                 forwardedRequest += "Host: \(self.targetHost):\(self.targetPort)\r\n"
-                if forceConnectionClose {
-                    forwardedRequest += "Connection: close\r\n"
-                }
+                // Always close connections - this proxy doesn't support keep-alive/pipelining
+                forwardedRequest += "Connection: close\r\n"
                 
                 let contentLength = body.utf8.count
                 forwardedRequest += "Content-Length: \(contentLength)\r\n"
@@ -396,11 +395,10 @@ class ThinkingProxy {
                     
                     if isComplete {
                         targetConnection.cancel()
-                        if forceConnectionClose {
-                            originalConnection.send(content: nil, isComplete: true, completion: .contentProcessed({ _ in
-                                originalConnection.cancel()
-                            }))
-                        }
+                        // Always close client connection - no keep-alive/pipelining support
+                        originalConnection.send(content: nil, isComplete: true, completion: .contentProcessed({ _ in
+                            originalConnection.cancel()
+                        }))
                     } else {
                         // Schedule next iteration of the streaming loop
                         self.streamNextChunk(from: targetConnection, to: originalConnection, forceConnectionClose: forceConnectionClose)
@@ -408,11 +406,10 @@ class ThinkingProxy {
                 }))
             } else if isComplete {
                 targetConnection.cancel()
-                if forceConnectionClose {
-                    originalConnection.send(content: nil, isComplete: true, completion: .contentProcessed({ _ in
-                        originalConnection.cancel()
-                    }))
-                }
+                // Always close client connection - no keep-alive/pipelining support
+                originalConnection.send(content: nil, isComplete: true, completion: .contentProcessed({ _ in
+                    originalConnection.cancel()
+                }))
             }
         }
     }
@@ -421,19 +418,29 @@ class ThinkingProxy {
      Sends an error response to the client
      */
     private func sendError(to connection: NWConnection, statusCode: Int, message: String) {
-        let response = """
-        HTTP/1.1 \(statusCode) \(message)
-        Content-Type: text/plain
-        Content-Length: \(message.count)
-        Connection: close
-        
-        \(message)
-        """
-        
-        if let responseData = response.data(using: .utf8) {
-            connection.send(content: responseData, completion: .contentProcessed({ _ in
-                connection.cancel()
-            }))
+        // Build response with proper CRLF line endings and correct byte count
+        guard let bodyData = message.data(using: .utf8) else {
+            connection.cancel()
+            return
         }
+        
+        let headers = "HTTP/1.1 \(statusCode) \(message)\r\n" +
+                     "Content-Type: text/plain\r\n" +
+                     "Content-Length: \(bodyData.count)\r\n" +
+                     "Connection: close\r\n" +
+                     "\r\n"
+        
+        guard let headerData = headers.data(using: .utf8) else {
+            connection.cancel()
+            return
+        }
+        
+        var responseData = Data()
+        responseData.append(headerData)
+        responseData.append(bodyData)
+        
+        connection.send(content: responseData, completion: .contentProcessed({ _ in
+            connection.cancel()
+        }))
     }
 }
