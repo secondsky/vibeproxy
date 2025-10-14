@@ -260,7 +260,7 @@ struct SettingsView: View {
             }
             .padding(.bottom, 12)
         }
-        .frame(width: 480, height: 380)
+        .frame(width: 480, height: 440)
         .onAppear {
             authManager.checkAuthStatus()
             checkLaunchAtLogin()
