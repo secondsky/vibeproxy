@@ -5,13 +5,15 @@ import Network
  A lightweight HTTP proxy that intercepts requests to add extended thinking parameters
  for Claude models based on model name suffixes.
  
- Model name patterns:
- - `*-thinking-low` → 2,000 token budget
- - `*-thinking-medium` → 4,000 token budget
- - `*-thinking-high` → 8,000 token budget
+ Model name pattern:
+ - `*-thinking-NUMBER` → Custom token budget (e.g., claude-sonnet-4-5-20250929-thinking-5000)
  
  The proxy strips the suffix and adds the `thinking` parameter to the request body
  before forwarding to CLIProxyAPI.
+ 
+ Examples:
+ - claude-sonnet-4-5-20250929-thinking-2000 → 2,000 token budget
+ - claude-sonnet-4-5-20250929-thinking-8000 → 8,000 token budget
  */
 class ThinkingProxy {
     private var listener: NWListener?
@@ -19,13 +21,6 @@ class ThinkingProxy {
     private let targetPort: UInt16 = 8318
     private let targetHost = "127.0.0.1"
     private var isRunning = false
-    
-    /// Token budget mappings for thinking levels
-    private let thinkingBudgets: [String: Int] = [
-        "thinking-low": 2000,
-        "thinking-medium": 4000,
-        "thinking-high": 8000
-    ]
     
     /**
      Starts the thinking proxy server on port 8317
@@ -180,36 +175,45 @@ class ThinkingProxy {
             return (jsonString, false)  // Not Claude, pass through
         }
         
-        // Check for thinking suffix
-        for (suffix, budget) in thinkingBudgets {
-            if model.hasSuffix("-\(suffix)") {
-                // Strip the suffix from model name
-                let cleanModel = String(model.dropLast(suffix.count + 1))
-                json["model"] = cleanModel
-                
-                // Add thinking parameter
-                json["thinking"] = [
-                    "type": "enabled",
-                    "budget_tokens": budget
-                ]
-                
-                // Ensure max_tokens is greater than thinking budget
-                // Claude requires: max_tokens > thinking.budget_tokens
-                if let currentMaxTokens = json["max_tokens"] as? Int {
-                    if currentMaxTokens <= budget {
-                        // Add 50% more tokens on top of the thinking budget (Claude requires max_tokens > budget)
-                        let newMaxTokens = budget + (budget / 2)
-                        json["max_tokens"] = newMaxTokens
-                    }
+        // Check for thinking suffix pattern: -thinking-NUMBER
+        let thinkingPrefix = "-thinking-"
+        if let thinkingRange = model.range(of: thinkingPrefix, options: .backwards),
+           thinkingRange.upperBound < model.endIndex {
+            
+            // Extract the number after "-thinking-"
+            let budgetString = String(model[thinkingRange.upperBound...])
+            
+            // Validate it's a number
+            guard let budget = Int(budgetString), budget > 0 else {
+                return (jsonString, false)  // Invalid number, pass through
+            }
+            
+            // Strip the thinking suffix from model name
+            let cleanModel = String(model[..<thinkingRange.lowerBound])
+            json["model"] = cleanModel
+            
+            // Add thinking parameter
+            json["thinking"] = [
+                "type": "enabled",
+                "budget_tokens": budget
+            ]
+            
+            // Ensure max_tokens is greater than thinking budget
+            // Claude requires: max_tokens > thinking.budget_tokens
+            if let currentMaxTokens = json["max_tokens"] as? Int {
+                if currentMaxTokens <= budget {
+                    // Add 50% more tokens on top of the thinking budget (Claude requires max_tokens > budget)
+                    let newMaxTokens = budget + (budget / 2)
+                    json["max_tokens"] = newMaxTokens
                 }
-                
-                NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with budget \(budget)")
-                
-                // Convert back to JSON
-                if let modifiedData = try? JSONSerialization.data(withJSONObject: json),
-                   let modifiedString = String(data: modifiedData, encoding: .utf8) {
-                    return (modifiedString, true)
-                }
+            }
+            
+            NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with thinking budget \(budget)")
+            
+            // Convert back to JSON
+            if let modifiedData = try? JSONSerialization.data(withJSONObject: json),
+               let modifiedString = String(data: modifiedData, encoding: .utf8) {
+                return (modifiedString, true)
             }
         }
         
