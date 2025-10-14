@@ -329,9 +329,12 @@ class ThinkingProxy {
             originalConnection.send(content: fullResponse, completion: .contentProcessed({ sendError in
                 if let sendError = sendError {
                     NSLog("[ThinkingProxy] Error sending response: \(sendError)")
+                    originalConnection.cancel()
+                } else {
+                    // Close connection after sending response (HTTP/1.1 without keep-alive support for now)
+                    // This prevents connection reuse errors in Factory CLI
+                    originalConnection.cancel()
                 }
-                // Don't cancel immediately - let connection close gracefully
-                // The client will close the connection when done reading
             }))
         }
         
