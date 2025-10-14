@@ -17,7 +17,7 @@ import Network
  */
 class ThinkingProxy {
     private var listener: NWListener?
-    private let proxyPort: UInt16 = 8317
+    let proxyPort: UInt16 = 8317
     private let targetPort: UInt16 = 8318
     private let targetHost = "127.0.0.1"
     private(set) var isRunning = false

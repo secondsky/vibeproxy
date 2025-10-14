@@ -154,17 +154,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // Start the thinking proxy first (port 8317)
         thinkingProxy.start()
         
-        // Verify thinking proxy started successfully before starting backend
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self else { return }
-            
-            guard self.thinkingProxy.isRunning else {
-                self.showNotification(title: "Server Failed", body: "Could not start thinking proxy on port 8317")
-                return
-            }
-            
-            // Then start CLIProxyAPI (port 8318)
-            self.serverManager.start { [weak self] success in
+        // Poll for thinking proxy readiness with timeout
+        pollForProxyReadiness(attempts: 0, maxAttempts: 60, intervalMs: 50)
+    }
+    
+    private func pollForProxyReadiness(attempts: Int, maxAttempts: Int, intervalMs: Int) {
+        // Check if proxy is running
+        if thinkingProxy.isRunning {
+            // Success - proceed to start backend
+            serverManager.start { [weak self] success in
                 DispatchQueue.main.async {
                     if success {
                         self?.updateMenuBarStatus()
@@ -177,6 +175,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
                     }
                 }
             }
+            return
+        }
+        
+        // Check if we've exceeded timeout
+        if attempts >= maxAttempts {
+            DispatchQueue.main.async { [weak self] in
+                self?.showNotification(title: "Server Failed", body: "Could not start thinking proxy on port 8317 (timeout)")
+            }
+            return
+        }
+        
+        // Schedule next poll
+        let interval = Double(intervalMs) / 1000.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
+            self?.pollForProxyReadiness(attempts: attempts + 1, maxAttempts: maxAttempts, intervalMs: intervalMs)
         }
     }
 
@@ -193,14 +206,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     @objc func copyServerURL() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString("http://localhost:\(serverManager.port)", forType: .string)
+        pasteboard.setString("http://localhost:\(thinkingProxy.proxyPort)", forType: .string)
         showNotification(title: "Copied", body: "Server URL copied to clipboard")
     }
 
     @objc func updateMenuBarStatus() {
         // Update status items
         if let serverStatus = menu.item(at: 0) {
-            serverStatus.title = serverManager.isRunning ? "Server: Running (\(serverManager.port))" : "Server: Stopped"
+            serverStatus.title = serverManager.isRunning ? "Server: Running (\(thinkingProxy.proxyPort))" : "Server: Stopped"
         }
 
         // Update button states
