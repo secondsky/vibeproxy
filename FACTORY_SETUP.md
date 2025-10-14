@@ -216,6 +216,9 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 
 ## Extended Thinking Mode
 
+> [!NOTE]
+> The `-thinking-NUMBER` model naming convention is a **VibeProxy-specific implementation**, not an official Claude model name from Anthropic. VibeProxy intercepts these custom model names and translates them into proper API calls with the `thinking` parameter.
+
 VibeProxy automatically adds extended thinking support for Claude models! Simply append a thinking suffix to any Claude model name:
 
 **Model Name Pattern**: `{model-name}-thinking-{NUMBER}`
