@@ -65,27 +65,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
-    {
-      "model_display_name": "CC: Sonnet 4.5 (Low)",
-      "model": "claude-sonnet-4-5-20250929",
-      "base_url": "http://localhost:8317",
-      "api_key": "dummy-not-used",
-      "provider": "anthropic"
-    },
-    {
-      "model_display_name": "CC: Sonnet 4.5 (Medium)",
-      "model": "claude-sonnet-4-5-20250929",
-      "base_url": "http://localhost:8317",
-      "api_key": "dummy-not-used",
-      "provider": "anthropic"
-    },
-    {
-      "model_display_name": "CC: Sonnet 4.5 (High)",
-      "model": "claude-sonnet-4-5-20250929",
-      "base_url": "http://localhost:8317",
-      "api_key": "dummy-not-used",
-      "provider": "anthropic"
-    },
+
     {
       "model_display_name": "GPT-5 Codex",
       "model": "gpt-5-codex",
@@ -176,7 +156,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 ### Claude Models
 - `claude-opus-4-1-20250805` - Claude Opus 4.1 (Most powerful)
 - `claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet (Latest)
-  - **Low/Medium/High** variants use the same model with different extended thinking budgets
+  - Supports extended thinking mode (see Advanced section below)
 
 ### OpenAI Models
 - `gpt-5` - Standard GPT-5
@@ -207,6 +187,32 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 3. ✅ Factory CLI config has the custom models configured
 4. ✅ `droid` can select your custom models
 5. ✅ Test with a simple prompt: "what day is it?"
+
+## Advanced: Extended Thinking Mode
+
+Claude models support **extended thinking mode**, which allows them to show their reasoning process. This is controlled via API parameters, not model selection.
+
+**Note**: Factory CLI's custom model config doesn't support passing the `thinking` parameter directly. Extended thinking would need to be configured at the application level or by using a proxy that adds these parameters.
+
+If you're making direct API calls through VibeProxy (e.g., via curl or custom code):
+
+```bash
+curl http://localhost:8317/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-5-20250929",
+    "thinking": {"type": "enabled", "budget_tokens": 4000},
+    "max_tokens": 10000,
+    "messages": [{"role": "user", "content": "Your question"}]
+  }' | gunzip
+```
+
+**Thinking budgets**:
+- Low: 2,000 tokens
+- Medium: 4,000 tokens  
+- High: 8,000 tokens
+
+The response will include a `thinking` content block showing Claude's reasoning before the final answer.
 
 ## Tips
 
