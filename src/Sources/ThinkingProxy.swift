@@ -150,28 +150,34 @@ class ThinkingProxy {
         let bodyStart = requestString.distance(from: requestString.startIndex, to: bodyStartRange.upperBound)
         let bodyString = String(requestString[requestString.index(requestString.startIndex, offsetBy: bodyStart)...])
         
-        NSLog("[ThinkingProxy] Parsed request: method=\(method), path=\(path), bodyLength=\(bodyString.count)")
-        
         // Try to parse and modify JSON body for POST requests
         var modifiedBody = bodyString
+        
         if method == "POST" && !bodyString.isEmpty {
-            if let modifiedJSON = processThinkingParameter(jsonString: bodyString) {
-                modifiedBody = modifiedJSON
+            if let result = processThinkingParameter(jsonString: bodyString) {
+                modifiedBody = result.0
+                // result.1 indicates if transformation happened, but we forward all requests via URLSession now
             }
         }
         
-        // Forward to CLIProxyAPI
-        forwardRequest(method: method, path: path, headers: lines, body: modifiedBody, originalConnection: connection)
+        // Use URLSession for all requests (works reliably for both transformed and pass-through)
+        forwardWithURLSession(method: method, path: path, body: modifiedBody, originalConnection: connection)
     }
     
     /**
      Processes the JSON body to add thinking parameter if model name has a thinking suffix
+     Returns tuple of (modifiedJSON, needsTransformation)
      */
-    private func processThinkingParameter(jsonString: String) -> String? {
+    private func processThinkingParameter(jsonString: String) -> (String, Bool)? {
         guard let jsonData = jsonString.data(using: .utf8),
               var json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
               let model = json["model"] as? String else {
             return nil
+        }
+        
+        // Only process Claude models with thinking suffix
+        guard model.starts(with: "claude-") else {
+            return (jsonString, false)  // Not Claude, pass through
         }
         
         // Check for thinking suffix
@@ -191,10 +197,9 @@ class ThinkingProxy {
                 // Claude requires: max_tokens > thinking.budget_tokens
                 if let currentMaxTokens = json["max_tokens"] as? Int {
                     if currentMaxTokens <= budget {
-                        // Add 50% more tokens on top of the thinking budget
+                        // Add 50% more tokens on top of the thinking budget (Claude requires max_tokens > budget)
                         let newMaxTokens = budget + (budget / 2)
                         json["max_tokens"] = newMaxTokens
-                        NSLog("[ThinkingProxy] Increased max_tokens from \(currentMaxTokens) to \(newMaxTokens) (must be > thinking budget)")
                     }
                 }
                 
@@ -203,16 +208,80 @@ class ThinkingProxy {
                 // Convert back to JSON
                 if let modifiedData = try? JSONSerialization.data(withJSONObject: json),
                    let modifiedString = String(data: modifiedData, encoding: .utf8) {
-                    return modifiedString
+                    return (modifiedString, true)
                 }
             }
         }
         
-        return nil
+        return (jsonString, false)  // No transformation needed
     }
     
     /**
-     Forwards the request to CLIProxyAPI on port 8318
+     Forwards Claude thinking requests using URLSession (simpler and more reliable)
+     */
+    private func forwardWithURLSession(method: String, path: String, body: String, originalConnection: NWConnection) {
+        let urlString = "http://\(targetHost):\(targetPort)\(path)"
+        guard let url = URL(string: urlString) else {
+            NSLog("[ThinkingProxy] Invalid URL: \(urlString)")
+            sendError(to: originalConnection, statusCode: 500, message: "Invalid target URL")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body.data(using: .utf8)
+        
+        // Use custom session that preserves gzip encoding
+        let config = URLSessionConfiguration.ephemeral
+        config.httpAdditionalHeaders = ["Accept-Encoding": "gzip"]  // Accept gzip
+        let session = URLSession(configuration: config)
+        
+        let task = session.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                NSLog("[ThinkingProxy] URLSession error: \(error)")
+                self.sendError(to: originalConnection, statusCode: 502, message: "Bad Gateway")
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                NSLog("[ThinkingProxy] Invalid response from CLIProxyAPI")
+                self.sendError(to: originalConnection, statusCode: 502, message: "Bad Gateway")
+                return
+            }
+            
+            // Build complete HTTP response with proper headers and body
+            var responseString = "HTTP/1.1 \(httpResponse.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))\r\n"
+            
+            // Copy all response headers from CLIProxyAPI
+            for (key, value) in httpResponse.allHeaderFields {
+                responseString += "\(key): \(value)\r\n"
+            }
+            
+            responseString += "\r\n"
+            
+            // Combine headers and body in one send
+            var fullResponse = Data()
+            if let headerData = responseString.data(using: .utf8) {
+                fullResponse.append(headerData)
+            }
+            if let bodyData = data {
+                fullResponse.append(bodyData)
+            }
+            
+            // Send complete response as-is (including gzip if present)
+            originalConnection.send(content: fullResponse, completion: .contentProcessed({ _ in
+                originalConnection.cancel()
+            }))
+        }
+        
+        task.resume()
+    }
+    
+    /**
+     Forwards the request to CLIProxyAPI on port 8318 (pass-through for non-thinking requests)
      */
     private func forwardRequest(method: String, path: String, headers: [String], body: String, originalConnection: NWConnection) {
         // Create connection to CLIProxyAPI
@@ -246,12 +315,6 @@ class ThinkingProxy {
                 }
                 
                 forwardedRequest += "\r\n\(body)"
-                
-                // Debug logging
-                NSLog("[ThinkingProxy] Forwarding request to CLIProxyAPI:")
-                NSLog("[ThinkingProxy] Method: \(method), Path: \(path)")
-                NSLog("[ThinkingProxy] Body length: \(body.utf8.count)")
-                NSLog("[ThinkingProxy] Body preview: \(String(body.prefix(200)))")
                 
                 // Send to CLIProxyAPI
                 if let requestData = forwardedRequest.data(using: .utf8) {
