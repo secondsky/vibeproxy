@@ -225,7 +225,7 @@ class ServerManager {
         case .codexLogin:
             authProcess.arguments = ["--config", configPath, "-codex-login"]
         case .geminiLogin:
-            authProcess.arguments = ["--config", configPath, "-login"]
+            authProcess.arguments = ["--config", configPath, "-gemini-web-auth"]
         }
         
         // Create pipes for output
