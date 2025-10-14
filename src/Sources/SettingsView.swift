@@ -151,7 +151,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .help("⚠️ Note: Uses the first (default) project from your Gemini account")
+                .help("⚠️ Note: If you're an existing Gemini user with multiple projects, authentication will use your default project. Set your desired project as default in Google AI Studio before connecting.")
 
                 HStack {
                     if let nsImage = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
@@ -378,7 +378,7 @@ struct SettingsView: View {
 
                 if success {
                     self.authResultSuccess = true
-                    self.authResultMessage = "✓ Gemini authenticated successfully!\n\nPlease complete the authentication in your browser, then the app will automatically detect your credentials.\n\n⚠️ Note: The first (default) project in your Gemini account will be used."
+                    self.authResultMessage = "✓ Gemini authenticated successfully!\n\nPlease complete the authentication in your browser, then the app will automatically detect your credentials.\n\n⚠️ Note: If you have multiple Gemini projects, the default project will be used. You can change your default project in Google AI Studio if needed."
                     self.showingAuthResult = true
                     // File monitor will automatically update the status
                 } else {
