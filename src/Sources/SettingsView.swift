@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var launchAtLogin = false
     @State private var isAuthenticatingClaude = false
     @State private var isAuthenticatingCodex = false
+    @State private var isAuthenticatingGemini = false
     @State private var showingAuthResult = false
     @State private var authResultMessage = ""
     @State private var authResultSuccess = false
@@ -107,6 +108,50 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                HStack {
+                    if let nsImage = IconCatalog.shared.image(named: "icon-gemini.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .renderingMode(.template)
+                            .frame(width: 20, height: 20)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Gemini")
+                        if authManager.geminiStatus.isAuthenticated {
+                            Text(authManager.geminiStatus.email ?? "Connected")
+                                .font(.caption2)
+                                .foregroundColor(authManager.geminiStatus.isExpired ? .red : .green)
+                            if authManager.geminiStatus.isExpired {
+                                Text("(expired)")
+                                    .font(.caption2)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    Spacer()
+                    if isAuthenticatingGemini {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        if authManager.geminiStatus.isAuthenticated {
+                            if authManager.geminiStatus.isExpired {
+                                Button("Reconnect") {
+                                    connectGemini()
+                                }
+                            } else {
+                                Button("Disconnect") {
+                                    disconnectGemini()
+                                }
+                            }
+                        } else {
+                            Button("Connect") {
+                                connectGemini()
+                            }
+                        }
+                    }
+                }
+                .help("⚠️ Note: Uses the first (default) project from your Gemini account")
 
                 HStack {
                     if let nsImage = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
@@ -316,6 +361,39 @@ struct SettingsView: View {
         isAuthenticatingCodex = true
         performDisconnect(for: "codex", serviceName: "Codex") { success, message in
             self.isAuthenticatingCodex = false
+            self.authResultSuccess = success
+            self.authResultMessage = message
+            self.showingAuthResult = true
+        }
+    }
+
+    private func connectGemini() {
+        isAuthenticatingGemini = true
+        NSLog("[SettingsView] Starting Gemini authentication")
+
+        serverManager.runAuthCommand(.geminiLogin) { success, output in
+            NSLog("[SettingsView] Auth completed - success: %d, output: %@", success, output)
+            DispatchQueue.main.async {
+                self.isAuthenticatingGemini = false
+
+                if success {
+                    self.authResultSuccess = true
+                    self.authResultMessage = "✓ Gemini authenticated successfully!\n\nPlease complete the authentication in your browser, then the app will automatically detect your credentials.\n\n⚠️ Note: The first (default) project in your Gemini account will be used."
+                    self.showingAuthResult = true
+                    // File monitor will automatically update the status
+                } else {
+                    self.authResultSuccess = false
+                    self.authResultMessage = "Authentication failed. Please check if the browser opened and try again.\n\nDetails: \(output.isEmpty ? "No output from authentication process" : output)"
+                    self.showingAuthResult = true
+                }
+            }
+        }
+    }
+
+    private func disconnectGemini() {
+        isAuthenticatingGemini = true
+        performDisconnect(for: "gemini", serviceName: "Gemini") { success, message in
+            self.isAuthenticatingGemini = false
             self.authResultSuccess = success
             self.authResultMessage = message
             self.showingAuthResult = true

@@ -39,10 +39,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         let statusIconSize = NSSize(width: 18, height: 18)
         let serviceIconSize = NSSize(width: 20, height: 20)
         
-        _ = IconCatalog.shared.image(named: "icon-active.png", resizedTo: statusIconSize, template: true)
-        _ = IconCatalog.shared.image(named: "icon-inactive.png", resizedTo: statusIconSize, template: true)
-        _ = IconCatalog.shared.image(named: "icon-codex.png", resizedTo: serviceIconSize, template: true)
-        _ = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: serviceIconSize, template: true)
+        let iconsToPreload = [
+            ("icon-active.png", statusIconSize),
+            ("icon-inactive.png", statusIconSize),
+            ("icon-codex.png", serviceIconSize),
+            ("icon-claude.png", serviceIconSize),
+            ("icon-gemini.png", serviceIconSize)
+        ]
+        
+        for (name, size) in iconsToPreload {
+            if IconCatalog.shared.image(named: name, resizedTo: size, template: true) == nil {
+                NSLog("[IconPreload] Warning: Failed to preload icon '%@'", name)
+            }
+        }
     }
     
     private func configureNotifications() {

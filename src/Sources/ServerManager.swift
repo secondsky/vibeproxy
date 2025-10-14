@@ -224,6 +224,8 @@ class ServerManager {
             authProcess.arguments = ["--config", configPath, "-claude-login"]
         case .codexLogin:
             authProcess.arguments = ["--config", configPath, "-codex-login"]
+        case .geminiLogin:
+            authProcess.arguments = ["--config", configPath, "-gemini-web-auth"]
         }
         
         // Create pipes for output
@@ -340,4 +342,5 @@ class ServerManager {
 enum AuthCommand {
     case claudeLogin
     case codexLogin
+    case geminiLogin
 }
