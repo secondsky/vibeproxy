@@ -5,6 +5,39 @@ All notable changes to VibeProxy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-10-14
+
+### Added
+- **Icon Caching System** - New `IconCatalog` singleton for thread-safe icon caching
+  - Eliminates redundant disk I/O for frequently accessed icons
+  - Icons are preloaded on app launch to reduce first-use latency
+  - Cached by name, size, and template flag for optimal reuse
+
+- **Modern Notification System** - Migrated from deprecated `NSUserNotification` to `UNUserNotificationCenter`
+  - Proper permission handling with user consent
+  - Notifications display with banner and sound, including when app is in foreground
+  - Permission state checked before sending notifications
+
+### Improved
+- **Server Lifecycle Management** - Enhanced reliability and async handling
+  - Dedicated process queue for serialized server operations
+  - Graceful shutdown with timeout and force-kill fallback
+  - Readiness check after startup to verify server is operational
+  - Async `stop()` method with optional completion callback
+
+- **Service Disconnect Flow** - Streamlined and more reliable
+  - Generic `performDisconnect()` method eliminates code duplication
+  - Automatic server restart after credential removal
+  - Better error messages for missing credentials
+
+- **Log Buffer Performance** - Replaced array with O(1) ring buffer
+  - Fixed-size circular buffer maintains constant memory footprint
+  - Optimal for 1000-line log history
+
+### Fixed
+- **Menu Bar Icons** - More consistent sizing and reliable fallbacks to system icons
+- Improved status updates and icon changes reflecting server state accurately
+
 ## [1.0.2] - 2025-10-06
 
 ### Fixed
@@ -60,6 +93,7 @@ All future changes will be documented here before release.
 
 ---
 
+[1.0.3]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.3
 [1.0.2]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.2
 [1.0.1]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.1
 [1.0.0]: https://github.com/automazeio/vibeproxy/releases/tag/v1.0.0
