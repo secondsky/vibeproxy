@@ -86,9 +86,10 @@ class ThinkingProxy {
     
     /**
      Receives the HTTP request from the client
+     Accumulates data until full request is received (handles large payloads)
      */
-    private func receiveRequest(from connection: NWConnection) {
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
+    private func receiveRequest(from connection: NWConnection, accumulatedData: Data = Data()) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 1048576) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
             
             if let error = error {
@@ -104,8 +105,40 @@ class ThinkingProxy {
                 return
             }
             
-            // Parse and process the request
-            self.processRequest(data: data, connection: connection)
+            var newAccumulatedData = accumulatedData
+            newAccumulatedData.append(data)
+            
+            // Check if we have a complete HTTP request
+            if let requestString = String(data: newAccumulatedData, encoding: .utf8),
+               let headerEndRange = requestString.range(of: "\r\n\r\n") {
+                
+                // Extract Content-Length if present
+                let headerEndIndex = requestString.distance(from: requestString.startIndex, to: headerEndRange.upperBound)
+                let headerPart = String(requestString.prefix(headerEndIndex))
+                
+                if let contentLengthLine = headerPart.components(separatedBy: "\r\n").first(where: { $0.lowercased().starts(with: "content-length:") }) {
+                    let contentLengthStr = contentLengthLine.components(separatedBy: ":")[1].trimmingCharacters(in: .whitespaces)
+                    if let contentLength = Int(contentLengthStr) {
+                        let bodyStartIndex = headerEndIndex
+                        let currentBodyLength = newAccumulatedData.count - bodyStartIndex
+                        
+                        // If we haven't received the full body yet, keep receiving
+                        if currentBodyLength < contentLength {
+                            self.receiveRequest(from: connection, accumulatedData: newAccumulatedData)
+                            return
+                        }
+                    }
+                }
+                
+                // We have a complete request, process it
+                self.processRequest(data: newAccumulatedData, connection: connection)
+            } else if !isComplete {
+                // Haven't found header end yet, keep receiving
+                self.receiveRequest(from: connection, accumulatedData: newAccumulatedData)
+            } else {
+                // Complete but malformed, process what we have
+                self.processRequest(data: newAccumulatedData, connection: connection)
+            }
         }
     }
     
@@ -260,9 +293,25 @@ class ThinkingProxy {
             // Build complete HTTP response with proper headers and body
             var responseString = "HTTP/1.1 \(httpResponse.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))\r\n"
             
+            // Check if response body is gzipped (starts with gzip magic bytes 1f 8b)
+            let isGzipped = data?.count ?? 0 >= 2 && 
+                           data![0] == 0x1f && 
+                           data![1] == 0x8b
+            
             // Copy all response headers from CLIProxyAPI
+            var hasContentEncoding = false
             for (key, value) in httpResponse.allHeaderFields {
+                let keyStr = String(describing: key).lowercased()
+                if keyStr == "content-encoding" {
+                    hasContentEncoding = true
+                }
                 responseString += "\(key): \(value)\r\n"
+            }
+            
+            // If body is gzipped but Content-Encoding header is missing, add it
+            if isGzipped && !hasContentEncoding {
+                responseString += "Content-Encoding: gzip\r\n"
+                NSLog("[ThinkingProxy] Added missing Content-Encoding: gzip header")
             }
             
             responseString += "\r\n"
