@@ -183,32 +183,33 @@ class ThinkingProxy {
             // Extract the number after "-thinking-"
             let budgetString = String(model[thinkingRange.upperBound...])
             
-            // Validate it's a number
-            guard let budget = Int(budgetString), budget > 0 else {
-                return (jsonString, false)  // Invalid number, pass through
-            }
-            
-            // Strip the thinking suffix from model name
+            // Strip the thinking suffix from model name regardless
             let cleanModel = String(model[..<thinkingRange.lowerBound])
             json["model"] = cleanModel
             
-            // Add thinking parameter
-            json["thinking"] = [
-                "type": "enabled",
-                "budget_tokens": budget
-            ]
-            
-            // Ensure max_tokens is greater than thinking budget
-            // Claude requires: max_tokens > thinking.budget_tokens
-            if let currentMaxTokens = json["max_tokens"] as? Int {
-                if currentMaxTokens <= budget {
-                    // Add 50% more tokens on top of the thinking budget (Claude requires max_tokens > budget)
-                    let newMaxTokens = budget + (budget / 2)
-                    json["max_tokens"] = newMaxTokens
+            // Only add thinking parameter if it's a valid integer
+            if let budget = Int(budgetString), budget > 0 {
+                // Add thinking parameter
+                json["thinking"] = [
+                    "type": "enabled",
+                    "budget_tokens": budget
+                ]
+                
+                // Ensure max_tokens is greater than thinking budget
+                // Claude requires: max_tokens > thinking.budget_tokens
+                if let currentMaxTokens = json["max_tokens"] as? Int {
+                    if currentMaxTokens <= budget {
+                        // Add 50% more tokens on top of the thinking budget (Claude requires max_tokens > budget)
+                        let newMaxTokens = budget + (budget / 2)
+                        json["max_tokens"] = newMaxTokens
+                    }
                 }
+                
+                NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with thinking budget \(budget)")
+            } else {
+                // Invalid number - just strip suffix and use vanilla model
+                NSLog("[ThinkingProxy] Stripped invalid thinking suffix from '\(model)' → '\(cleanModel)' (no thinking)")
             }
-            
-            NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with thinking budget \(budget)")
             
             // Convert back to JSON
             if let modifiedData = try? JSONSerialization.data(withJSONObject: json),
