@@ -67,6 +67,49 @@ struct SettingsView: View {
 
                 Section("Services") {
                 HStack {
+                    if let nsImage = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .renderingMode(.template)
+                            .frame(width: 20, height: 20)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Claude Code")
+                        if authManager.claudeStatus.isAuthenticated {
+                            Text(authManager.claudeStatus.email ?? "Connected")
+                                .font(.caption2)
+                                .foregroundColor(authManager.claudeStatus.isExpired ? .red : .green)
+                            if authManager.claudeStatus.isExpired {
+                                Text("(expired)")
+                                    .font(.caption2)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    Spacer()
+                    if isAuthenticatingClaude {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        if authManager.claudeStatus.isAuthenticated {
+                            if authManager.claudeStatus.isExpired {
+                                Button("Reconnect") {
+                                    connectClaudeCode()
+                                }
+                            } else {
+                                Button("Disconnect") {
+                                    disconnectClaudeCode()
+                                }
+                            }
+                        } else {
+                            Button("Connect") {
+                                connectClaudeCode()
+                            }
+                        }
+                    }
+                }
+
+                HStack {
                     if let nsImage = IconCatalog.shared.image(named: "icon-codex.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
                         Image(nsImage: nsImage)
                             .resizable()
@@ -152,49 +195,6 @@ struct SettingsView: View {
                     }
                 }
                 .help("⚠️ Note: If you're an existing Gemini user with multiple projects, authentication will use your default project. Set your desired project as default in Google AI Studio before connecting.")
-
-                HStack {
-                    if let nsImage = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .frame(width: 20, height: 20)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Claude Code")
-                        if authManager.claudeStatus.isAuthenticated {
-                            Text(authManager.claudeStatus.email ?? "Connected")
-                                .font(.caption2)
-                                .foregroundColor(authManager.claudeStatus.isExpired ? .red : .green)
-                            if authManager.claudeStatus.isExpired {
-                                Text("(expired)")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if isAuthenticatingClaude {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        if authManager.claudeStatus.isAuthenticated {
-                            if authManager.claudeStatus.isExpired {
-                                Button("Reconnect") {
-                                    connectClaudeCode()
-                                }
-                            } else {
-                                Button("Disconnect") {
-                                    disconnectClaudeCode()
-                                }
-                            }
-                        } else {
-                            Button("Connect") {
-                                connectClaudeCode()
-                            }
-                        }
-                    }
-                }
                 }
             }
             .formStyle(.grouped)
