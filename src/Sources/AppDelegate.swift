@@ -169,11 +169,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func stopServer() {
-        // Stop CLIProxyAPI first
-        serverManager.stop()
-        
-        // Then stop the thinking proxy
+        // Stop the thinking proxy first to stop accepting new requests
         thinkingProxy.stop()
+        
+        // Then stop CLIProxyAPI backend
+        serverManager.stop()
         
         updateMenuBarStatus()
     }
@@ -239,6 +239,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     @objc func quit() {
         // Stop server and wait for cleanup before quitting
         if serverManager.isRunning {
+            thinkingProxy.stop()
             serverManager.stop()
         }
         // Give a moment for cleanup to complete
@@ -251,6 +252,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name("ServerStatusChanged"), object: nil)
         // Final cleanup - stop server if still running
         if serverManager.isRunning {
+            thinkingProxy.stop()
             serverManager.stop()
         }
     }
@@ -258,6 +260,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // If server is running, stop it first
         if serverManager.isRunning {
+            thinkingProxy.stop()
             serverManager.stop()
             // Give server time to stop (up to 3 seconds total with the improved stop method)
             return .terminateNow
