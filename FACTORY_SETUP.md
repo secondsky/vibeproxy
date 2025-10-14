@@ -52,67 +52,99 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 {
   "custom_models": [
     {
+      "model_display_name": "CC: Opus 4.1",
       "model": "claude-opus-4-1-20250805",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
     {
+      "model_display_name": "CC: Sonnet 4.5",
       "model": "claude-sonnet-4-5-20250929",
       "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
       "provider": "anthropic"
     },
     {
-      "model": "gpt-5",
-      "base_url": "http://localhost:8317/v1",
+      "model_display_name": "CC: Sonnet 4.5 (Low)",
+      "model": "claude-sonnet-4-5-20250929",
+      "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
-      "provider": "openai"
+      "provider": "anthropic"
     },
     {
-      "model": "gpt-5-minimal",
-      "base_url": "http://localhost:8317/v1",
+      "model_display_name": "CC: Sonnet 4.5 (Medium)",
+      "model": "claude-sonnet-4-5-20250929",
+      "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
-      "provider": "openai"
+      "provider": "anthropic"
     },
     {
-      "model": "gpt-5-low",
-      "base_url": "http://localhost:8317/v1",
+      "model_display_name": "CC: Sonnet 4.5 (High)",
+      "model": "claude-sonnet-4-5-20250929",
+      "base_url": "http://localhost:8317",
       "api_key": "dummy-not-used",
-      "provider": "openai"
+      "provider": "anthropic"
     },
     {
-      "model": "gpt-5-medium",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model": "gpt-5-high",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
+      "model_display_name": "GPT-5 Codex",
       "model": "gpt-5-codex",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
+      "model_display_name": "GPT-5 Codex (Low)",
       "model": "gpt-5-codex-low",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
+      "model_display_name": "GPT-5 Codex (Medium)",
       "model": "gpt-5-codex-medium",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
+      "model_display_name": "GPT-5 Codex (High)",
       "model": "gpt-5-codex-high",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5",
+      "model": "gpt-5",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (Minimal)",
+      "model": "gpt-5-minimal",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (Low)",
+      "model": "gpt-5-low",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (Medium)",
+      "model": "gpt-5-medium",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5 (High)",
+      "model": "gpt-5-high",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
@@ -144,6 +176,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 ### Claude Models
 - `claude-opus-4-1-20250805` - Claude Opus 4.1 (Most powerful)
 - `claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet (Latest)
+  - **Low/Medium/High** variants use the same model with different extended thinking budgets
 
 ### OpenAI Models
 - `gpt-5` - Standard GPT-5
