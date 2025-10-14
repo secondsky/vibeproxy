@@ -40,14 +40,20 @@ class ThinkingProxy {
             listener?.stateUpdateHandler = { [weak self] state in
                 switch state {
                 case .ready:
-                    self?.isRunning = true
+                    DispatchQueue.main.async {
+                        self?.isRunning = true
+                    }
                     NSLog("[ThinkingProxy] Listening on port \(self?.proxyPort ?? 0)")
                 case .failed(let error):
                     NSLog("[ThinkingProxy] Failed: \(error)")
-                    self?.isRunning = false
+                    DispatchQueue.main.async {
+                        self?.isRunning = false
+                    }
                 case .cancelled:
                     NSLog("[ThinkingProxy] Cancelled")
-                    self?.isRunning = false
+                    DispatchQueue.main.async {
+                        self?.isRunning = false
+                    }
                 default:
                     break
                 }
@@ -72,7 +78,9 @@ class ThinkingProxy {
         
         listener?.cancel()
         listener = nil
-        isRunning = false
+        DispatchQueue.main.async { [weak self] in
+            self?.isRunning = false
+        }
         NSLog("[ThinkingProxy] Stopped")
     }
     
