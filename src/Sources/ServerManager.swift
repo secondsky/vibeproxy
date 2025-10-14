@@ -245,6 +245,20 @@ class ServerManager {
             addLog("✓ Authentication process started (PID: \(authProcess.processIdentifier)) - browser should open shortly")
             NSLog("[Auth] Process started with PID: %d", authProcess.processIdentifier)
             
+            // Set up termination handler to detect when auth completes
+            authProcess.terminationHandler = { process in
+                let exitCode = process.terminationStatus
+                NSLog("[Auth] Process terminated with exit code: %d", exitCode)
+                
+                if exitCode == 0 {
+                    // Authentication completed successfully
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        // Give file system a moment to write the credential file
+                        NotificationCenter.default.post(name: NSNotification.Name("AuthDirectoryChanged"), object: nil)
+                    }
+                }
+            }
+            
             // Wait briefly to check if process crashes immediately
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.0) {
                 if authProcess.isRunning {
