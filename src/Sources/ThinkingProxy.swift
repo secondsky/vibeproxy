@@ -222,54 +222,6 @@ class ThinkingProxy {
     }
     
     /**
-     Ensures response has role=assistant for Factory CLI compatibility
-     */
-    private func ensureAssistantRole(data: Data?, httpResponse: HTTPURLResponse) -> Data? {
-        guard let data = data else { return nil }
-        
-        // Check if response is gzipped
-        let isGzipped = (httpResponse.allHeaderFields["Content-Encoding"] as? String)?.lowercased().contains("gzip") ?? false
-        
-        // Decompress if needed
-        var jsonData = data
-        if isGzipped {
-            guard let decompressed = try? (data as NSData).decompressed(using: .zlib) as Data else {
-                // Can't decompress, return original
-                return data
-            }
-            jsonData = decompressed
-        }
-        
-        // Try to parse as JSON
-        guard var json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
-            // Not JSON or can't parse, return original
-            return data
-        }
-        
-        // Check if this is a message response that needs role field
-        if json["type"] as? String == "message" {
-            if json["role"] == nil {
-                json["role"] = "assistant"
-                NSLog("[ThinkingProxy] Added missing role=assistant to response")
-                
-                // Convert back to JSON
-                if let modifiedData = try? JSONSerialization.data(withJSONObject: json) {
-                    // Re-compress if original was compressed
-                    if isGzipped {
-                        if let recompressed = try? (modifiedData as NSData).compressed(using: .zlib) as Data {
-                            return recompressed
-                        }
-                    }
-                    return modifiedData
-                }
-            }
-        }
-        
-        // No modification needed or failed to modify, return original
-        return data
-    }
-    
-    /**
      Forwards Claude thinking requests using URLSession (simpler and more reliable)
      */
     private func forwardWithURLSession(method: String, path: String, body: String, originalConnection: NWConnection) {
@@ -305,23 +257,12 @@ class ThinkingProxy {
                 return
             }
             
-            // Fix response to ensure role=assistant exists (for Factory CLI compression)
-            let fixedBodyData = self.ensureAssistantRole(data: data, httpResponse: httpResponse)
-            
             // Build complete HTTP response with proper headers and body
             var responseString = "HTTP/1.1 \(httpResponse.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))\r\n"
             
-            // Copy all response headers from CLIProxyAPI (except Content-Length, we'll recalculate)
+            // Copy all response headers from CLIProxyAPI
             for (key, value) in httpResponse.allHeaderFields {
-                let keyStr = String(describing: key).lowercased()
-                if keyStr != "content-length" {
-                    responseString += "\(key): \(value)\r\n"
-                }
-            }
-            
-            // Add correct Content-Length for potentially modified body
-            if let bodyData = fixedBodyData {
-                responseString += "Content-Length: \(bodyData.count)\r\n"
+                responseString += "\(key): \(value)\r\n"
             }
             
             responseString += "\r\n"
@@ -331,11 +272,11 @@ class ThinkingProxy {
             if let headerData = responseString.data(using: .utf8) {
                 fullResponse.append(headerData)
             }
-            if let bodyData = fixedBodyData {
+            if let bodyData = data {
                 fullResponse.append(bodyData)
             }
             
-            // Send complete response
+            // Send complete response as-is
             originalConnection.send(content: fullResponse, completion: .contentProcessed({ _ in
                 originalConnection.cancel()
             }))
