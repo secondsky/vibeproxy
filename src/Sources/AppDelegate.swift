@@ -181,6 +181,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // Check if we've exceeded timeout
         if attempts >= maxAttempts {
             DispatchQueue.main.async { [weak self] in
+                // Clean up partially initialized proxy
+                self?.thinkingProxy.stop()
                 self?.showNotification(title: "Server Failed", body: "Could not start thinking proxy on port 8317 (timeout)")
             }
             return
