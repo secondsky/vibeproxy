@@ -167,6 +167,18 @@ class ThinkingProxy {
         
         let method = parts[0]
         let path = parts[1]
+        let httpVersion = parts[2]
+
+        // Collect headers while preserving original casing
+        var headers: [(String, String)] = []
+        for line in lines.dropFirst() {
+            if line.isEmpty { break }
+            guard let separatorIndex = line.firstIndex(of: ":") else { continue }
+            let name = String(line[..<separatorIndex]).trimmingCharacters(in: .whitespaces)
+            let valueStart = line.index(after: separatorIndex)
+            let value = String(line[valueStart...]).trimmingCharacters(in: .whitespaces)
+            headers.append((name, value))
+        }
         
         // Find the body start
         guard let bodyStartRange = requestString.range(of: "\r\n\r\n") else {
@@ -181,15 +193,15 @@ class ThinkingProxy {
         // Try to parse and modify JSON body for POST requests
         var modifiedBody = bodyString
         
+        var transformationApplied = false
         if method == "POST" && !bodyString.isEmpty {
             if let result = processThinkingParameter(jsonString: bodyString) {
                 modifiedBody = result.0
-                // result.1 indicates if transformation happened, but we forward all requests via URLSession now
+                transformationApplied = result.1
             }
         }
         
-        // Use URLSession for all requests (works reliably for both transformed and pass-through)
-        forwardWithURLSession(method: method, path: path, body: modifiedBody, originalConnection: connection)
+        forwardRequest(method: method, path: path, version: httpVersion, headers: headers, body: modifiedBody, originalConnection: connection, forceConnectionClose: transformationApplied)
     }
     
     /**
@@ -222,23 +234,52 @@ class ThinkingProxy {
             
             // Only add thinking parameter if it's a valid integer
             if let budget = Int(budgetString), budget > 0 {
+                let hardCap = 32000
+                let effectiveBudget = min(budget, hardCap - 1)
+                if effectiveBudget != budget {
+                    NSLog("[ThinkingProxy] Adjusted thinking budget from \(budget) to \(effectiveBudget) to stay within limits")
+                }
                 // Add thinking parameter
                 json["thinking"] = [
                     "type": "enabled",
-                    "budget_tokens": budget
+                    "budget_tokens": effectiveBudget
                 ]
                 
-                // Ensure max_tokens is greater than thinking budget
-                // Claude requires: max_tokens > thinking.budget_tokens
+                // Ensure max token limits are greater than the thinking budget
+                // Claude requires: max_output_tokens (or legacy max_tokens) > thinking.budget_tokens
+                let tokenHeadroom = max(1024, effectiveBudget / 10)
+                let desiredMaxTokens = effectiveBudget + tokenHeadroom
+                var requiredMaxTokens = min(desiredMaxTokens, hardCap)
+                if requiredMaxTokens <= effectiveBudget {
+                    requiredMaxTokens = min(effectiveBudget + 1, hardCap)
+                }
+                
+                let hasMaxOutputTokensField = json.keys.contains("max_output_tokens")
+                var adjusted = false
+                
                 if let currentMaxTokens = json["max_tokens"] as? Int {
-                    if currentMaxTokens <= budget {
-                        // Add 50% more tokens on top of the thinking budget (Claude requires max_tokens > budget)
-                        let newMaxTokens = budget + (budget / 2)
-                        json["max_tokens"] = newMaxTokens
+                    if currentMaxTokens <= effectiveBudget {
+                        json["max_tokens"] = requiredMaxTokens
+                    }
+                    adjusted = true
+                }
+                
+                if let currentMaxOutputTokens = json["max_output_tokens"] as? Int {
+                    if currentMaxOutputTokens <= effectiveBudget {
+                        json["max_output_tokens"] = requiredMaxTokens
+                    }
+                    adjusted = true
+                }
+                
+                if !adjusted {
+                    if hasMaxOutputTokensField {
+                        json["max_output_tokens"] = requiredMaxTokens
+                    } else {
+                        json["max_tokens"] = requiredMaxTokens
                     }
                 }
                 
-                NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with thinking budget \(budget)")
+                NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with thinking budget \(effectiveBudget)")
             } else {
                 // Invalid number - just strip suffix and use vanilla model
                 NSLog("[ThinkingProxy] Stripped invalid thinking suffix from '\(model)' → '\(cleanModel)' (no thinking)")
@@ -255,89 +296,9 @@ class ThinkingProxy {
     }
     
     /**
-     Forwards Claude thinking requests using URLSession (simpler and more reliable)
-     */
-    private func forwardWithURLSession(method: String, path: String, body: String, originalConnection: NWConnection) {
-        let urlString = "http://\(targetHost):\(targetPort)\(path)"
-        guard let url = URL(string: urlString) else {
-            NSLog("[ThinkingProxy] Invalid URL: \(urlString)")
-            sendError(to: originalConnection, statusCode: 500, message: "Invalid target URL")
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = body.data(using: .utf8)
-        
-        // Use custom session that preserves gzip encoding
-        let config = URLSessionConfiguration.ephemeral
-        config.httpAdditionalHeaders = ["Accept-Encoding": "gzip"]  // Accept gzip
-        let session = URLSession(configuration: config)
-        
-        let task = session.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                NSLog("[ThinkingProxy] URLSession error: \(error)")
-                self.sendError(to: originalConnection, statusCode: 502, message: "Bad Gateway")
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                NSLog("[ThinkingProxy] Invalid response from CLIProxyAPI")
-                self.sendError(to: originalConnection, statusCode: 502, message: "Bad Gateway")
-                return
-            }
-            
-            // Build complete HTTP response with proper headers and body
-            var responseString = "HTTP/1.1 \(httpResponse.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))\r\n"
-            
-            // Check if response body is gzipped (starts with gzip magic bytes 1f 8b)
-            let isGzipped = data?.count ?? 0 >= 2 && 
-                           data![0] == 0x1f && 
-                           data![1] == 0x8b
-            
-            // Copy all response headers from CLIProxyAPI
-            var hasContentEncoding = false
-            for (key, value) in httpResponse.allHeaderFields {
-                let keyStr = String(describing: key).lowercased()
-                if keyStr == "content-encoding" {
-                    hasContentEncoding = true
-                }
-                responseString += "\(key): \(value)\r\n"
-            }
-            
-            // If body is gzipped but Content-Encoding header is missing, add it
-            if isGzipped && !hasContentEncoding {
-                responseString += "Content-Encoding: gzip\r\n"
-                NSLog("[ThinkingProxy] Added missing Content-Encoding: gzip header")
-            }
-            
-            responseString += "\r\n"
-            
-            // Combine headers and body in one send
-            var fullResponse = Data()
-            if let headerData = responseString.data(using: .utf8) {
-                fullResponse.append(headerData)
-            }
-            if let bodyData = data {
-                fullResponse.append(bodyData)
-            }
-            
-            // Send complete response as-is
-            originalConnection.send(content: fullResponse, completion: .contentProcessed({ _ in
-                originalConnection.cancel()
-            }))
-        }
-        
-        task.resume()
-    }
-    
-    /**
      Forwards the request to CLIProxyAPI on port 8318 (pass-through for non-thinking requests)
      */
-    private func forwardRequest(method: String, path: String, headers: [String], body: String, originalConnection: NWConnection) {
+    private func forwardRequest(method: String, path: String, version: String, headers: [(String, String)], body: String, originalConnection: NWConnection, forceConnectionClose: Bool) {
         // Create connection to CLIProxyAPI
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(targetHost), port: NWEndpoint.Port(rawValue: targetPort)!)
         let parameters = NWParameters.tcp
@@ -347,28 +308,26 @@ class ThinkingProxy {
             switch state {
             case .ready:
                 // Build the forwarded request
-                var forwardedRequest = "\(method) \(path) HTTP/1.1\r\n"
-                
-                // Copy relevant headers (skip the request line, Host, and Content-Length)
-                for header in headers.dropFirst() {
-                    let lowercaseHeader = header.lowercased()
-                    if !header.isEmpty && 
-                       !lowercaseHeader.starts(with: "host:") && 
-                       !lowercaseHeader.starts(with: "content-length:") {
-                        forwardedRequest += "\(header)\r\n"
+                var forwardedRequest = "\(method) \(path) \(version)\r\n"
+                let excludedHeaders: Set<String> = ["content-length", "host", "transfer-encoding"]
+                for (name, value) in headers {
+                    let lowercasedName = name.lowercased()
+                    if excludedHeaders.contains(lowercasedName) {
+                        continue
                     }
+                    forwardedRequest += "\(name): \(value)\r\n"
                 }
                 
-                // Add correct Host header
+                // Override Host header
                 forwardedRequest += "Host: \(self.targetHost):\(self.targetPort)\r\n"
-                
-                // Add correct Content-Length for the (potentially modified) body
-                if !body.isEmpty {
-                    let contentLength = body.utf8.count
-                    forwardedRequest += "Content-Length: \(contentLength)\r\n"
+                if forceConnectionClose {
+                    forwardedRequest += "Connection: close\r\n"
                 }
                 
-                forwardedRequest += "\r\n\(body)"
+                let contentLength = body.utf8.count
+                forwardedRequest += "Content-Length: \(contentLength)\r\n"
+                forwardedRequest += "\r\n"
+                forwardedRequest += body
                 
                 // Send to CLIProxyAPI
                 if let requestData = forwardedRequest.data(using: .utf8) {
@@ -379,7 +338,7 @@ class ThinkingProxy {
                             originalConnection.cancel()
                         } else {
                             // Receive response from CLIProxyAPI
-                            self.receiveResponse(from: targetConnection, originalConnection: originalConnection)
+                            self.receiveResponse(from: targetConnection, originalConnection: originalConnection, forceConnectionClose: forceConnectionClose)
                         }
                     }))
                 }
@@ -400,7 +359,7 @@ class ThinkingProxy {
     /**
      Receives response from CLIProxyAPI
      */
-    private func receiveResponse(from targetConnection: NWConnection, originalConnection: NWConnection) {
+    private func receiveResponse(from targetConnection: NWConnection, originalConnection: NWConnection, forceConnectionClose: Bool) {
         targetConnection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
             
@@ -420,15 +379,23 @@ class ThinkingProxy {
                     
                     if isComplete {
                         targetConnection.cancel()
-                        originalConnection.cancel()
+                        if forceConnectionClose {
+                            originalConnection.send(content: nil, isComplete: true, completion: .contentProcessed({ _ in
+                                originalConnection.cancel()
+                            }))
+                        }
                     } else {
                         // Continue receiving
-                        self.receiveResponse(from: targetConnection, originalConnection: originalConnection)
+                        self.receiveResponse(from: targetConnection, originalConnection: originalConnection, forceConnectionClose: forceConnectionClose)
                     }
                 }))
             } else if isComplete {
                 targetConnection.cancel()
-                originalConnection.cancel()
+                if forceConnectionClose {
+                    originalConnection.send(content: nil, isComplete: true, completion: .contentProcessed({ _ in
+                        originalConnection.cancel()
+                    }))
+                }
             }
         }
     }
