@@ -142,12 +142,15 @@ class ThinkingProxy {
         
         // Find the body start
         guard let bodyStartRange = requestString.range(of: "\r\n\r\n") else {
-            sendError(to: connection, statusCode: 400, message: "Invalid request format")
+            NSLog("[ThinkingProxy] Error: Could not find body separator in request")
+            sendError(to: connection, statusCode: 400, message: "Invalid request format - no body separator")
             return
         }
         
         let bodyStart = requestString.distance(from: requestString.startIndex, to: bodyStartRange.upperBound)
         let bodyString = String(requestString[requestString.index(requestString.startIndex, offsetBy: bodyStart)...])
+        
+        NSLog("[ThinkingProxy] Parsed request: method=\(method), path=\(path), bodyLength=\(bodyString.count)")
         
         // Try to parse and modify JSON body for POST requests
         var modifiedBody = bodyString
@@ -184,6 +187,17 @@ class ThinkingProxy {
                     "budget_tokens": budget
                 ]
                 
+                // Ensure max_tokens is greater than thinking budget
+                // Claude requires: max_tokens > thinking.budget_tokens
+                if let currentMaxTokens = json["max_tokens"] as? Int {
+                    if currentMaxTokens <= budget {
+                        // Add 50% more tokens on top of the thinking budget
+                        let newMaxTokens = budget + (budget / 2)
+                        json["max_tokens"] = newMaxTokens
+                        NSLog("[ThinkingProxy] Increased max_tokens from \(currentMaxTokens) to \(newMaxTokens) (must be > thinking budget)")
+                    }
+                }
+                
                 NSLog("[ThinkingProxy] Transformed model '\(model)' → '\(cleanModel)' with budget \(budget)")
                 
                 // Convert back to JSON
@@ -212,9 +226,12 @@ class ThinkingProxy {
                 // Build the forwarded request
                 var forwardedRequest = "\(method) \(path) HTTP/1.1\r\n"
                 
-                // Copy relevant headers (skip the request line and empty lines)
+                // Copy relevant headers (skip the request line, Host, and Content-Length)
                 for header in headers.dropFirst() {
-                    if !header.isEmpty && !header.starts(with: "Host:") {
+                    let lowercaseHeader = header.lowercased()
+                    if !header.isEmpty && 
+                       !lowercaseHeader.starts(with: "host:") && 
+                       !lowercaseHeader.starts(with: "content-length:") {
                         forwardedRequest += "\(header)\r\n"
                     }
                 }
@@ -222,13 +239,19 @@ class ThinkingProxy {
                 // Add correct Host header
                 forwardedRequest += "Host: \(self.targetHost):\(self.targetPort)\r\n"
                 
-                // Update Content-Length if body was modified
+                // Add correct Content-Length for the (potentially modified) body
                 if !body.isEmpty {
                     let contentLength = body.utf8.count
                     forwardedRequest += "Content-Length: \(contentLength)\r\n"
                 }
                 
                 forwardedRequest += "\r\n\(body)"
+                
+                // Debug logging
+                NSLog("[ThinkingProxy] Forwarding request to CLIProxyAPI:")
+                NSLog("[ThinkingProxy] Method: \(method), Path: \(path)")
+                NSLog("[ThinkingProxy] Body length: \(body.utf8.count)")
+                NSLog("[ThinkingProxy] Body preview: \(String(body.prefix(200)))")
                 
                 // Send to CLIProxyAPI
                 if let requestData = forwardedRequest.data(using: .utf8) {
