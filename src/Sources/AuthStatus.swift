@@ -40,11 +40,14 @@ class AuthManager: ObservableObject {
         // Check for auth files
         do {
             let files = try FileManager.default.contentsOfDirectory(at: authDir, includingPropertiesForKeys: nil)
+            NSLog("[AuthStatus] Scanning %d files in auth directory", files.count)
             
             for file in files where file.pathExtension == "json" {
+                NSLog("[AuthStatus] Checking file: %@", file.lastPathComponent)
                 if let data = try? Data(contentsOf: file),
                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let type = json["type"] as? String {
+                    NSLog("[AuthStatus] Found type '%@' in %@", type, file.lastPathComponent)
                     
                     let email = json["email"] as? String
                     var expiredDate: Date?

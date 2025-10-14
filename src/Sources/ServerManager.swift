@@ -236,6 +236,19 @@ class ServerManager {
         authProcess.standardError = errorPipe
         authProcess.standardInput = inputPipe
         
+        // For Gemini login, automatically send newline to accept default project
+        if case .geminiLogin = command {
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 3.0) {
+                // Send newline after 3 seconds to accept default project choice
+                if authProcess.isRunning {
+                    if let data = "\n".data(using: .utf8) {
+                        try? inputPipe.fileHandleForWriting.write(contentsOf: data)
+                        NSLog("[Auth] Sent newline to accept default project")
+                    }
+                }
+            }
+        }
+        
         // Set environment to inherit from parent
         authProcess.environment = ProcessInfo.processInfo.environment
         
