@@ -11,9 +11,12 @@
 <a href="https://github.com/automazeio/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
 </p>
 
-**Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code and ChatGPT subscriptions with powerful AI coding  tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
+**Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code, ChatGPT, and **Gemini** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
 
 Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
+
+> [!IMPORTANT]
+> **NEW: Gemini Support! 🎉** VibeProxy now supports Google's Gemini AI with full OAuth authentication. Connect your Google account and use Gemini with your favorite AI coding tools!
 
 <p align="center">
 <br>
@@ -28,7 +31,7 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 
 - 🎯 **Native macOS Experience** - Clean, native SwiftUI interface that feels right at home on macOS
 - 🚀 **One-Click Server Management** - Start/stop the proxy server from your menu bar
-- 🔐 **OAuth Integration** - Authenticate with Codex and Claude Code directly from the app
+- 🔐 **OAuth Integration** - Authenticate with Codex, Claude Code, and Gemini directly from the app
 - 📊 **Real-Time Status** - Live connection status and automatic credential detection
 - 🔄 **Auto-Updates** - Monitors auth files and updates UI in real-time
 - 🎨 **Beautiful Icons** - Custom icons with dark mode support
@@ -59,7 +62,7 @@ Want to build it yourself? See [**INSTALLATION.md**](INSTALLATION.md) for detail
 1. Launch VibeProxy - you'll see a menu bar icon
 2. Click the icon and select "Open Settings"
 3. The server will start automatically
-4. Click "Connect" for Codex or Claude Code to authenticate
+4. Click "Connect" for Claude Code, Codex, or Gemini to authenticate
 
 ### Authentication
 
@@ -98,8 +101,9 @@ VibeProxy/
 │       ├── config.yaml         # CLIProxyAPI config
 │       ├── icon-active.png     # Menu bar icon (active)
 │       ├── icon-inactive.png   # Menu bar icon (inactive)
+│       ├── icon-claude.png     # Claude Code service icon
 │       ├── icon-codex.png      # Codex service icon
-│       └── icon-claude.png     # Clause service icon
+│       └── icon-gemini.png     # Gemini service icon
 ├── Package.swift               # Swift Package Manager config
 ├── Info.plist                  # macOS app metadata
 ├── build.sh                    # Resource bundling script
