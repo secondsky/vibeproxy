@@ -5,6 +5,43 @@ All notable changes to VibeProxy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-10-14
+
+### Added
+- **Gemini Support** - Full integration with Google's Gemini AI via OAuth authentication
+  - Browser-based Google OAuth flow for secure authentication
+  - Automatic credential file creation (`{email}-{project}.json` with type: "gemini")
+  - Project selection during authentication (auto-accepts default after 3 seconds)
+  - Support for multiple Google Cloud projects
+  - Connection status display with email and expiration tracking
+  - Help tooltip explaining project selection behavior
+
+- **Authentication Status System** - Unified credential monitoring for all services
+  - `AuthManager` scans `~/.cli-proxy-api/` directory for credential files
+  - Real-time file system monitoring for credential changes
+  - Support for Claude Code, Codex, and Gemini with type-based detection
+  - Expiration date tracking with visual indicators (green/red status)
+  - Debug logging for troubleshooting authentication issues
+
+### Improved
+- **Settings Window** - Increased height from 380px to 440px
+  - All three service sections now visible without scrolling
+  - Better spacing and readability
+  - Services displayed in alphabetical order: Claude Code, Codex, Gemini
+
+- **Authentication Flow** - More reliable completion detection
+  - Process termination handler triggers automatic credential refresh
+  - Auto-send newline to stdin for non-interactive project selection
+  - Better handling of OAuth callback completion
+  - Prevents process hanging during project selection prompt
+
+### Fixed
+- **Gemini Authentication** - Resolved credential file creation issues
+  - Correctly uses `-login` command for OAuth (vs `-gemini-web-auth` for cookies)
+  - Credential files properly detected regardless of filename pattern
+  - Authentication completion properly triggers UI refresh
+  - Browser opens reliably for OAuth flow
+
 ## [1.0.3] - 2025-10-14
 
 ### Added
