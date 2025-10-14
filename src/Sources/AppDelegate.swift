@@ -1,12 +1,15 @@
 import Cocoa
 import SwiftUI
 import WebKit
+import UserNotifications
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     var statusItem: NSStatusItem!
     var menu: NSMenu!
     var settingsWindow: NSWindow?
     var serverManager: ServerManager!
+    private let notificationCenter = UNUserNotificationCenter.current()
+    private var notificationPermissionGranted = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Setup menu bar
@@ -14,6 +17,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Initialize managers
         serverManager = ServerManager()
+        
+        // Warm commonly used icons to avoid first-use disk hits
+        preloadIcons()
+        
+        configureNotifications()
 
         // Start server automatically
         startServer()
@@ -26,29 +34,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
     }
+    
+    private func preloadIcons() {
+        let statusIconSize = NSSize(width: 18, height: 18)
+        let serviceIconSize = NSSize(width: 20, height: 20)
+        
+        _ = IconCatalog.shared.image(named: "icon-active.png", resizedTo: statusIconSize, template: true)
+        _ = IconCatalog.shared.image(named: "icon-inactive.png", resizedTo: statusIconSize, template: true)
+        _ = IconCatalog.shared.image(named: "icon-codex.png", resizedTo: serviceIconSize, template: true)
+        _ = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: serviceIconSize, template: true)
+    }
+    
+    private func configureNotifications() {
+        notificationCenter.delegate = self
+        notificationCenter.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
+            if let error = error {
+                NSLog("[Notifications] Authorization failed: %@", error.localizedDescription)
+            }
+            DispatchQueue.main.async {
+                self?.notificationPermissionGranted = granted
+                if !granted {
+                    NSLog("[Notifications] Authorization not granted; notifications will be suppressed")
+                }
+            }
+        }
+    }
 
     func setupMenuBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            // Load custom icon from bundle
-            if let resourcePath = Bundle.main.resourcePath {
-                let iconPath = (resourcePath as NSString).appendingPathComponent("icon-inactive.png")
-                if let icon = NSImage(contentsOfFile: iconPath) {
-                    icon.isTemplate = true
-                    // Resize to proper menu bar size (18x18 points for menu bar)
-                    icon.size = NSSize(width: 18, height: 18)
-                    button.image = icon
-                } else {
-                    NSLog("[MenuBar] Failed to load icon from: %@", iconPath)
-                    // Fallback to system icon
-                    button.image = NSImage(systemSymbolName: "network.slash", accessibilityDescription: "VibeProxy")
-                    button.image?.isTemplate = true
-                }
+            if let icon = IconCatalog.shared.image(named: "icon-inactive.png", resizedTo: NSSize(width: 18, height: 18), template: true) {
+                button.image = icon
             } else {
-                // Fallback to system icon
-                button.image = NSImage(systemSymbolName: "network.slash", accessibilityDescription: "VibeProxy")
-                button.image?.isTemplate = true
+                let fallback = NSImage(systemSymbolName: "network.slash", accessibilityDescription: "VibeProxy")
+                fallback?.isTemplate = true
+                button.image = fallback
+                NSLog("[MenuBar] Failed to load inactive icon from bundle; using fallback system icon")
             }
         }
 
@@ -158,43 +180,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Update icon based on server status
-        if let button = statusItem.button, let resourcePath = Bundle.main.resourcePath {
-            if serverManager.isRunning {
-                // Load active icon
-                let iconPath = (resourcePath as NSString).appendingPathComponent("icon-active.png")
-                if let icon = NSImage(contentsOfFile: iconPath) {
-                    icon.isTemplate = true
-                    // Resize to proper menu bar size (18x18 points for menu bar)
-                    icon.size = NSSize(width: 18, height: 18)
-                    button.image = icon
-                    NSLog("[MenuBar] Loaded active icon from: %@", iconPath)
-                } else {
-                    NSLog("[MenuBar] Failed to load active icon from: %@", iconPath)
-                    button.image = NSImage(systemSymbolName: "network", accessibilityDescription: "Running")
-                }
+        if let button = statusItem.button {
+            let iconName = serverManager.isRunning ? "icon-active.png" : "icon-inactive.png"
+            let fallbackSymbol = serverManager.isRunning ? "network" : "network.slash"
+            
+            if let icon = IconCatalog.shared.image(named: iconName, resizedTo: NSSize(width: 18, height: 18), template: true) {
+                button.image = icon
+                NSLog("[MenuBar] Loaded %@ icon from cache", serverManager.isRunning ? "active" : "inactive")
             } else {
-                // Load inactive icon
-                let iconPath = (resourcePath as NSString).appendingPathComponent("icon-inactive.png")
-                if let icon = NSImage(contentsOfFile: iconPath) {
-                    icon.isTemplate = true
-                    // Resize to proper menu bar size (18x18 points for menu bar)
-                    icon.size = NSSize(width: 18, height: 18)
-                    button.image = icon
-                    NSLog("[MenuBar] Loaded inactive icon from: %@", iconPath)
-                } else {
-                    NSLog("[MenuBar] Failed to load inactive icon from: %@", iconPath)
-                    button.image = NSImage(systemSymbolName: "network.slash", accessibilityDescription: "Stopped")
-                }
+                let fallback = NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: serverManager.isRunning ? "Running" : "Stopped")
+                fallback?.isTemplate = true
+                button.image = fallback
+                NSLog("[MenuBar] Failed to load %@ icon; using fallback", serverManager.isRunning ? "active" : "inactive")
             }
         }
     }
 
     func showNotification(title: String, body: String) {
-        let notification = NSUserNotification()
-        notification.title = title
-        notification.informativeText = body
-        notification.soundName = NSUserNotificationDefaultSoundName
-        NSUserNotificationCenter.default.deliver(notification)
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        
+        let request = UNNotificationRequest(
+            identifier: "io.automaze.vibeproxy.\(UUID().uuidString)",
+            content: content,
+            trigger: nil
+        )
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                NSLog("[Notifications] Failed to deliver notification '%@': %@", title, error.localizedDescription)
+            }
+        }
     }
 
     @objc func quit() {
@@ -209,6 +227,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name("ServerStatusChanged"), object: nil)
         // Final cleanup - stop server if still running
         if serverManager.isRunning {
             serverManager.stop()
@@ -223,5 +242,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return .terminateNow
         }
         return .terminateNow
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 }

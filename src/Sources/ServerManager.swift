@@ -1,14 +1,67 @@
 import Foundation
 import Combine
 
+private struct RingBuffer<Element> {
+    private var storage: [Element?]
+    private var head = 0
+    private var tail = 0
+    private(set) var count = 0
+    
+    init(capacity: Int) {
+        let safeCapacity = max(1, capacity)
+        storage = Array(repeating: nil, count: safeCapacity)
+    }
+    
+    mutating func append(_ element: Element) {
+        let capacity = storage.count
+        storage[tail] = element
+        
+        if count == capacity {
+            head = (head + 1) % capacity
+        } else {
+            count += 1
+        }
+        
+        tail = (tail + 1) % capacity
+    }
+    
+    func elements() -> [Element] {
+        let capacity = storage.count
+        guard count > 0 else { return [] }
+        
+        var result: [Element] = []
+        result.reserveCapacity(count)
+        
+        for index in 0..<count {
+            let storageIndex = (head + index) % capacity
+            if let value = storage[storageIndex] {
+                result.append(value)
+            }
+        }
+        
+        return result
+    }
+}
+
 class ServerManager {
     private var process: Process?
     @Published private(set) var isRunning = false
     private(set) var port = 8317
-    private var logBuffer: [String] = []
+    private var logBuffer: RingBuffer<String>
     private let maxLogLines = 1000
+    private let processQueue = DispatchQueue(label: "io.automaze.vibeproxy.server-process", qos: .userInitiated)
+    
+    private enum Timing {
+        static let readinessCheckDelay: TimeInterval = 1.0
+        static let gracefulTerminationTimeout: TimeInterval = 2.0
+        static let terminationPollInterval: TimeInterval = 0.05
+    }
     
     var onLogUpdate: (([String]) -> Void)?
+
+    init() {
+        logBuffer = RingBuffer(capacity: maxLogLines)
+    }
     
     deinit {
         // Ensure cleanup on deallocation
@@ -89,9 +142,15 @@ class ServerManager {
             addLog("✓ Server started on port \(port)")
             
             // Wait a bit to ensure it started successfully
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                NotificationCenter.default.post(name: NSNotification.Name("ServerStatusChanged"), object: nil)
-                completion(true)
+            DispatchQueue.main.asyncAfter(deadline: .now() + Timing.readinessCheckDelay) { [weak self] in
+                guard let self = self else { return }
+                if let process = self.process, process.isRunning {
+                    NotificationCenter.default.post(name: NSNotification.Name("ServerStatusChanged"), object: nil)
+                    completion(true)
+                } else {
+                    self.addLog("⚠️ Server exited before becoming ready")
+                    completion(false)
+                }
             }
         } catch {
             addLog("❌ Failed to start server: \(error.localizedDescription)")
@@ -99,42 +158,46 @@ class ServerManager {
         }
     }
     
-    func stop() {
-        guard isRunning else { return }
-        
+    func stop(completion: (() -> Void)? = nil) {
         guard let process = process else {
             DispatchQueue.main.async {
                 self.isRunning = false
+                NotificationCenter.default.post(name: NSNotification.Name("ServerStatusChanged"), object: nil)
+                completion?()
             }
             return
         }
         
         let pid = process.processIdentifier
         addLog("Stopping server (PID: \(pid))...")
-        
-        // First try graceful termination (SIGTERM)
-        process.terminate()
-        
-        // Wait up to 2 seconds for graceful termination
-        let deadline = Date().addingTimeInterval(2.0)
-        while process.isRunning && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.1)
+        processQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // First try graceful termination (SIGTERM)
+            process.terminate()
+            
+            // Wait up to configured interval for graceful termination
+            let deadline = Date().addingTimeInterval(Timing.gracefulTerminationTimeout)
+            while process.isRunning && Date() < deadline {
+                Thread.sleep(forTimeInterval: Timing.terminationPollInterval)
+            }
+            
+            // If still running, force kill (SIGKILL)
+            if process.isRunning {
+                self.addLog("⚠️ Server didn't stop gracefully, force killing...")
+                kill(pid, SIGKILL)
+            }
+            
+            process.waitUntilExit()
+            
+            DispatchQueue.main.async {
+                self.process = nil
+                self.isRunning = false
+                self.addLog("✓ Server stopped")
+                NotificationCenter.default.post(name: NSNotification.Name("ServerStatusChanged"), object: nil)
+                completion?()
+            }
         }
-        
-        // If still running, force kill (SIGKILL)
-        if process.isRunning {
-            addLog("⚠️ Server didn't stop gracefully, force killing...")
-            kill(pid, SIGKILL)
-            Thread.sleep(forTimeInterval: 0.5) // Give it a moment to die
-        }
-        
-        self.process = nil
-        DispatchQueue.main.async {
-            self.isRunning = false
-        }
-        addLog("✓ Server stopped")
-        
-        NotificationCenter.default.post(name: NSNotification.Name("ServerStatusChanged"), object: nil)
     }
     
     func runAuthCommand(_ command: AuthCommand, completion: @escaping (Bool, String) -> Void) {
@@ -158,9 +221,9 @@ class ServerManager {
         
         switch command {
         case .claudeLogin:
-            authProcess.arguments = ["-config", configPath, "-claude-login"]
+            authProcess.arguments = ["--config", configPath, "-claude-login"]
         case .codexLogin:
-            authProcess.arguments = ["-config", configPath, "-codex-login"]
+            authProcess.arguments = ["--config", configPath, "-codex-login"]
         }
         
         // Create pipes for output
@@ -222,18 +285,12 @@ class ServerManager {
             let logLine = "[\(timestamp)] \(message)"
             
             self.logBuffer.append(logLine)
-            
-            // Keep only last N lines
-            if self.logBuffer.count > self.maxLogLines {
-                self.logBuffer.removeFirst(self.logBuffer.count - self.maxLogLines)
-            }
-            
-            self.onLogUpdate?(self.logBuffer)
+            self.onLogUpdate?(self.logBuffer.elements())
         }
     }
     
     func getLogs() -> [String] {
-        return logBuffer
+        return logBuffer.elements()
     }
     
     /// Kill any orphaned cli-proxy-api processes that might be running
