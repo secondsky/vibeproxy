@@ -325,9 +325,13 @@ class ThinkingProxy {
                 fullResponse.append(bodyData)
             }
             
-            // Send complete response as-is
-            originalConnection.send(content: fullResponse, completion: .contentProcessed({ _ in
-                originalConnection.cancel()
+            // Send complete response
+            originalConnection.send(content: fullResponse, completion: .contentProcessed({ sendError in
+                if let sendError = sendError {
+                    NSLog("[ThinkingProxy] Error sending response: \(sendError)")
+                }
+                // Don't cancel immediately - let connection close gracefully
+                // The client will close the connection when done reading
             }))
         }
         
