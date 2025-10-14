@@ -167,7 +167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
                     if success {
                         self?.updateMenuBarStatus()
                         // User always connects to 8317 (thinking proxy)
-                        self?.showNotification(title: "Server Started", body: "VibeProxy is now running on port 8317")
+                        self?.showNotification(title: "Server Started", body: "VibeProxy is now running")
                     } else {
                         // Backend failed - stop the proxy to keep state consistent
                         self?.thinkingProxy.stop()
@@ -213,7 +213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     @objc func updateMenuBarStatus() {
         // Update status items
         if let serverStatus = menu.item(at: 0) {
-            serverStatus.title = serverManager.isRunning ? "Server: Running (\(thinkingProxy.proxyPort))" : "Server: Stopped"
+            serverStatus.title = serverManager.isRunning ? "Server: Running (port \(thinkingProxy.proxyPort))" : "Server: Stopped"
         }
 
         // Update button states
