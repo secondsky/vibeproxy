@@ -154,15 +154,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // Start the thinking proxy first (port 8317)
         thinkingProxy.start()
         
-        // Then start CLIProxyAPI (port 8318)
-        serverManager.start { [weak self] success in
-            DispatchQueue.main.async {
-                if success {
-                    self?.updateMenuBarStatus()
-                    // User always connects to 8317 (thinking proxy)
-                    self?.showNotification(title: "Server Started", body: "VibeProxy is now running on port 8317")
-                } else {
-                    self?.showNotification(title: "Server Failed", body: "Could not start the server")
+        // Verify thinking proxy started successfully before starting backend
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            
+            guard self.thinkingProxy.isRunning else {
+                self.showNotification(title: "Server Failed", body: "Could not start thinking proxy on port 8317")
+                return
+            }
+            
+            // Then start CLIProxyAPI (port 8318)
+            self.serverManager.start { [weak self] success in
+                DispatchQueue.main.async {
+                    if success {
+                        self?.updateMenuBarStatus()
+                        // User always connects to 8317 (thinking proxy)
+                        self?.showNotification(title: "Server Started", body: "VibeProxy is now running on port 8317")
+                    } else {
+                        // Backend failed - stop the proxy to keep state consistent
+                        self?.thinkingProxy.stop()
+                        self?.showNotification(title: "Server Failed", body: "Could not start backend server on port 8318")
+                    }
                 }
             }
         }

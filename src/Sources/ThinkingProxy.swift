@@ -20,7 +20,7 @@ class ThinkingProxy {
     private let proxyPort: UInt16 = 8317
     private let targetPort: UInt16 = 8318
     private let targetHost = "127.0.0.1"
-    private var isRunning = false
+    private(set) var isRunning = false
     
     /**
      Starts the thinking proxy server on port 8317
