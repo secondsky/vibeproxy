@@ -219,6 +219,8 @@ class ServerManager {
         // Get the config path
         let configPath = (resourcePath as NSString).appendingPathComponent("config.yaml")
         
+        var qwenEmail: String?
+        
         switch command {
         case .claudeLogin:
             authProcess.arguments = ["--config", configPath, "-claude-login"]
@@ -226,6 +228,9 @@ class ServerManager {
             authProcess.arguments = ["--config", configPath, "-codex-login"]
         case .geminiLogin:
             authProcess.arguments = ["--config", configPath, "-login"]
+        case .qwenLogin(let email):
+            authProcess.arguments = ["--config", configPath, "-qwen-login"]
+            qwenEmail = email
         }
         
         // Create pipes for output
@@ -244,6 +249,23 @@ class ServerManager {
                     if let data = "\n".data(using: .utf8) {
                         try? inputPipe.fileHandleForWriting.write(contentsOf: data)
                         NSLog("[Auth] Sent newline to accept default project")
+                    }
+                }
+            }
+        }
+        
+        // For Qwen login, automatically send email after OAuth completes
+        // NOTE: 10 second delay chosen to ensure OAuth browser flow completes before submitting email.
+        // This is a conservative estimate - OAuth typically completes in 5-8 seconds, but network
+        // conditions and user interaction time can vary. Future improvement: monitor authProcess
+        // output or termination handler to detect OAuth completion signal and submit immediately.
+        if let email = qwenEmail {
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 10.0) {
+                // Send email after OAuth completion
+                if authProcess.isRunning {
+                    if let data = "\(email)\n".data(using: .utf8) {
+                        try? inputPipe.fileHandleForWriting.write(contentsOf: data)
+                        NSLog("[Auth] Sent Qwen email: %@", email)
                     }
                 }
             }
@@ -370,4 +392,5 @@ enum AuthCommand {
     case claudeLogin
     case codexLogin
     case geminiLogin
+    case qwenLogin(email: String)
 }
