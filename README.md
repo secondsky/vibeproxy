@@ -35,6 +35,11 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 - 🎯 **Native macOS Experience** - Clean, native SwiftUI interface that feels right at home on macOS
 - 🚀 **One-Click Server Management** - Start/stop the proxy server from your menu bar
 - 🔐 **OAuth Integration** - Authenticate with Codex, Claude Code, Gemini, and Qwen directly from the app
+- 👥 **Multi-Account Support** - Manage multiple accounts per provider with intelligent switching
+  - Add unlimited accounts for Claude Code, Codex, Gemini, and Qwen
+  - **Auto-Switching**: Automatically switches accounts when hitting rate limits using round-robin load balancing
+  - **Manual Control**: Choose your primary account in Settings via radio button selection
+  - **Visual Management**: See all accounts with nicknames, emails, and connection status
 - 📊 **Real-Time Status** - Live connection status and automatic credential detection
 - 🔄 **Auto-Updates** - Monitors auth files and updates UI in real-time
 - 🎨 **Beautiful Icons** - Custom icons with dark mode support
@@ -57,6 +62,8 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 ### Build from Source
 
 Want to build it yourself? See [**INSTALLATION.md**](INSTALLATION.md) for detailed build instructions.
+
+**For personal use without Apple Developer account**: Run `./build-unsigned.sh` to create an unsigned app bundle that outputs to `/Users/eddie/Downloads/` - perfect for personal distribution and testing without code signing.
 
 ## Usage
 

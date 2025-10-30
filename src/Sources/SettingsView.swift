@@ -15,6 +15,15 @@ struct SettingsView: View {
     @State private var fileMonitor: DispatchSourceFileSystemObject?
     @State private var showingQwenEmailPrompt = false
     @State private var qwenEmail = ""
+    @State private var editingAccountId: String?
+    @State private var editingNickname: String = ""
+    @State private var editingProvider: String = ""
+    @State private var showingNicknameEditor = false
+    @State private var nicknameEditorError: String? = nil
+    @State private var accountToDelete: (provider: String, accountId: String)?
+    @State private var showingDeleteConfirmation = false
+    @State private var accountToReplace: (provider: String, accountId: String)?
+    @State private var showingReplaceAccountDialog = false
     
     private enum DisconnectTiming {
         static let serverRestartDelay: TimeInterval = 0.3
@@ -26,6 +35,143 @@ struct SettingsView: View {
             return "v\(version)"
         }
         return ""
+    }
+    
+    // Helper to render provider section with multi-account support
+    @ViewBuilder
+    private func providerSection(
+        iconName: String,
+        providerName: String,
+        providerType: String,
+        status: ProviderAuthStatus,
+        isAuthenticating: Bool,
+        connectAction: @escaping () -> Void,
+        helpText: String? = nil
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Provider header
+            HStack(spacing: 8) {
+                if let nsImage = IconCatalog.shared.image(named: iconName, resizedTo: NSSize(width: 20, height: 20), template: true) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .renderingMode(.template)
+                        .frame(width: 20, height: 20)
+                }
+                Text(providerName)
+                    .font(.headline)
+                Spacer()
+                if isAuthenticating {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if !status.hasAnyAccount {
+                    Button("Connect") {
+                        connectAction()
+                    }
+                }
+            }
+            
+            // Account list
+            if status.hasAnyAccount {
+                ForEach(status.accounts) { account in
+                    accountCard(
+                        account: account,
+                        providerType: providerType,
+                        isActive: status.activeAccountId == account.id,
+                        isAuthenticating: isAuthenticating
+                    )
+                }
+                
+                // Add another account button
+                if !isAuthenticating {
+                    Button(action: connectAction) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 14))
+                            Text("Add Another Account")
+                                .font(.caption)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.accentColor)
+                    .padding(.leading, 28)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .help(helpText ?? "")
+    }
+    
+    // Individual account card
+    @ViewBuilder
+    private func accountCard(account: AuthAccount, providerType: String, isActive: Bool, isAuthenticating: Bool) -> some View {
+        HStack(spacing: 12) {
+            // Active indicator (radio button)
+            Button(action: {
+                authManager.setActiveAccount(provider: providerType, accountId: account.id)
+            }) {
+                Image(systemName: isActive ? "circle.inset.filled" : "circle")
+                    .font(.system(size: 16))
+                    .foregroundColor(isActive ? .accentColor : .secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(isAuthenticating)
+            .help("Mark as primary account (Note: All accounts are used for automatic load balancing)")
+            
+            // Account info
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(account.nickname)
+                        .font(.subheadline)
+                        .fontWeight(isActive ? .semibold : .regular)
+                    
+                    if account.isExpired {
+                        Text("(expired)")
+                            .font(.caption2)
+                            .foregroundColor(.red)
+                    }
+                }
+                
+                if let email = account.email {
+                    Text(email)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            // Actions
+            HStack(spacing: 8) {
+                if account.isExpired {
+                    Button("Replace Account") {
+                        accountToReplace = (provider: providerType, accountId: account.id)
+                        showingReplaceAccountDialog = true
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    .disabled(isAuthenticating)
+                }
+                
+                Menu {
+                    Button("Rename") {
+                        startEditingNickname(provider: providerType, account: account)
+                    }
+                    Divider()
+                    Button("Remove", role: .destructive) {
+                        accountToDelete = (provider: providerType, accountId: account.id)
+                        showingDeleteConfirmation = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                }
+                .menuStyle(.borderlessButton)
+                .disabled(isAuthenticating)
+            }
+        }
+        .padding(.leading, 28)
+        .padding(.vertical, 4)
     }
 
     var body: some View {
@@ -69,182 +215,52 @@ struct SettingsView: View {
                 }
 
                 Section("Services") {
-                HStack {
-                    if let nsImage = IconCatalog.shared.image(named: "icon-claude.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .frame(width: 20, height: 20)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Claude Code")
-                        if authManager.claudeStatus.isAuthenticated {
-                            Text(authManager.claudeStatus.email ?? "Connected")
-                                .font(.caption2)
-                                .foregroundColor(authManager.claudeStatus.isExpired ? .red : .green)
-                            if authManager.claudeStatus.isExpired {
-                                Text("(expired)")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if isAuthenticatingClaude {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        if authManager.claudeStatus.isAuthenticated {
-                            if authManager.claudeStatus.isExpired {
-                                Button("Reconnect") {
-                                    connectClaudeCode()
-                                }
-                            } else {
-                                Button("Disconnect") {
-                                    disconnectClaudeCode()
-                                }
-                            }
-                        } else {
-                            Button("Connect") {
-                                connectClaudeCode()
-                            }
-                        }
-                    }
-                }
-
-                HStack {
-                    if let nsImage = IconCatalog.shared.image(named: "icon-codex.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .frame(width: 20, height: 20)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Codex")
-                        if authManager.codexStatus.isAuthenticated {
-                            Text(authManager.codexStatus.email ?? "Connected")
-                                .font(.caption2)
-                                .foregroundColor(authManager.codexStatus.isExpired ? .red : .green)
-                            if authManager.codexStatus.isExpired {
-                                Text("(expired)")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if isAuthenticatingCodex {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        if authManager.codexStatus.isAuthenticated {
-                            if authManager.codexStatus.isExpired {
-                                Button("Reconnect") {
-                                    connectCodex()
-                                }
-                            } else {
-                                Button("Disconnect") {
-                                    disconnectCodex()
-                                }
-                            }
-                        } else {
-                            Button("Connect") {
-                                connectCodex()
-                            }
-                        }
-                    }
-                }
-
-                HStack {
-                    if let nsImage = IconCatalog.shared.image(named: "icon-gemini.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .frame(width: 20, height: 20)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Gemini")
-                        if authManager.geminiStatus.isAuthenticated {
-                            Text(authManager.geminiStatus.email ?? "Connected")
-                                .font(.caption2)
-                                .foregroundColor(authManager.geminiStatus.isExpired ? .red : .green)
-                            if authManager.geminiStatus.isExpired {
-                                Text("(expired)")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if isAuthenticatingGemini {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        if authManager.geminiStatus.isAuthenticated {
-                            if authManager.geminiStatus.isExpired {
-                                Button("Reconnect") {
-                                    connectGemini()
-                                }
-                            } else {
-                                Button("Disconnect") {
-                                    disconnectGemini()
-                                }
-                            }
-                        } else {
-                            Button("Connect") {
-                                connectGemini()
-                            }
-                        }
-                    }
-                }
-                .help("⚠️ Note: If you're an existing Gemini user with multiple projects, authentication will use your default project. Set your desired project as default in Google AI Studio before connecting.")
-
-                HStack {
-                    if let nsImage = IconCatalog.shared.image(named: "icon-qwen.png", resizedTo: NSSize(width: 20, height: 20), template: true) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .frame(width: 20, height: 20)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Qwen")
-                        if authManager.qwenStatus.isAuthenticated {
-                            Text(authManager.qwenStatus.email ?? "Connected")
-                                .font(.caption2)
-                                .foregroundColor(authManager.qwenStatus.isExpired ? .red : .green)
-                            if authManager.qwenStatus.isExpired {
-                                Text("(expired)")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if isAuthenticatingQwen {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        if authManager.qwenStatus.isAuthenticated {
-                            if authManager.qwenStatus.isExpired {
-                                Button("Reconnect") {
-                                    connectQwen()
-                                }
-                            } else {
-                                Button("Disconnect") {
-                                    disconnectQwen()
-                                }
-                            }
-                        } else {
-                            Button("Connect") {
-                                connectQwen()
-                            }
-                        }
-                    }
-                }
+                    providerSection(
+                        iconName: "icon-claude.png",
+                        providerName: "Claude Code",
+                        providerType: "claude",
+                        status: authManager.claudeStatus,
+                        isAuthenticating: isAuthenticatingClaude,
+                        connectAction: connectClaudeCode
+                    )
+                    
+                    Divider()
+                    
+                    providerSection(
+                        iconName: "icon-codex.png",
+                        providerName: "Codex",
+                        providerType: "codex",
+                        status: authManager.codexStatus,
+                        isAuthenticating: isAuthenticatingCodex,
+                        connectAction: connectCodex
+                    )
+                    
+                    Divider()
+                    
+                    providerSection(
+                        iconName: "icon-gemini.png",
+                        providerName: "Gemini",
+                        providerType: "gemini",
+                        status: authManager.geminiStatus,
+                        isAuthenticating: isAuthenticatingGemini,
+                        connectAction: connectGemini,
+                        helpText: "⚠️ Note: If you're an existing Gemini user with multiple projects, authentication will use your default project. Set your desired project as default in Google AI Studio before connecting."
+                    )
+                    
+                    Divider()
+                    
+                    providerSection(
+                        iconName: "icon-qwen.png",
+                        providerName: "Qwen",
+                        providerType: "qwen",
+                        status: authManager.qwenStatus,
+                        isAuthenticating: isAuthenticatingQwen,
+                        connectAction: connectQwen
+                    )
                 }
             }
             .formStyle(.grouped)
-            .scrollDisabled(true)
+            .scrollDisabled(false)  // Allow scrolling when many accounts exist
 
             Spacer()
                 .frame(height: 12)
@@ -332,6 +348,67 @@ struct SettingsView: View {
             }
             .padding(24)
             .frame(width: 350)
+        }
+        .sheet(isPresented: $showingNicknameEditor) {
+            VStack(spacing: 16) {
+                Text("Rename Account")
+                    .font(.headline)
+                Text("Enter a new nickname for this account")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                TextField("Account nickname", text: $editingNickname)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 250)
+                    .onChange(of: editingNickname) { _ in
+                        // Clear error when user starts typing
+                        nicknameEditorError = nil
+                    }
+                
+                // Show inline error if present
+                if let error = nicknameEditorError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .frame(maxWidth: 250)
+                }
+                
+                HStack(spacing: 12) {
+                    Button("Cancel") {
+                        showingNicknameEditor = false
+                        nicknameEditorError = nil
+                    }
+                    Button("Save") {
+                        saveNickname()
+                    }
+                    .disabled(editingNickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(24)
+            .frame(width: 350)
+        }
+        .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                accountToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                deleteAccount()
+            }
+        } message: {
+            Text("Are you sure you want to remove this account? This action cannot be undone.")
+        }
+        .alert("Replace Expired Account", isPresented: $showingReplaceAccountDialog) {
+            Button("Cancel", role: .cancel) {
+                accountToReplace = nil
+            }
+            Button("Just Remove", role: .destructive) {
+                deleteAccountOnly()
+            }
+            Button("Remove & Add New") {
+                replaceAccount()
+            }
+        } message: {
+            Text("This will delete this expired account and optionally create a new one.\n\nExpired accounts are unusable. This action is safe.")
         }
         .onAppear {
             authManager.checkAuthStatus()
@@ -506,6 +583,108 @@ struct SettingsView: View {
             self.authResultSuccess = success
             self.authResultMessage = message
             self.showingAuthResult = true
+        }
+    }
+
+    // Delete account only (without adding new one)
+    private func deleteAccountOnly() {
+        guard let account = accountToReplace else { return }
+        
+        authManager.deleteAccount(provider: account.provider, accountId: account.accountId) { success, message in
+            DispatchQueue.main.async {
+                self.accountToReplace = nil
+                
+                if !success {
+                    self.authResultSuccess = false
+                    self.authResultMessage = message
+                    self.showingAuthResult = true
+                }
+            }
+        }
+    }
+    
+    // Replace expired account (delete then add new)
+    private func replaceAccount() {
+        guard let account = accountToReplace else { return }
+        
+        authManager.deleteAccount(provider: account.provider, accountId: account.accountId) { success, message in
+            DispatchQueue.main.async {
+                self.accountToReplace = nil
+                
+                if success {
+                    // Trigger OAuth for new account
+                    switch account.provider.lowercased() {
+                    case "claude":
+                        self.connectClaudeCode()
+                    case "codex":
+                        self.connectCodex()
+                    case "gemini":
+                        self.connectGemini()
+                    case "qwen":
+                        self.connectQwen()
+                    default:
+                        break
+                    }
+                } else {
+                    self.authResultSuccess = false
+                    self.authResultMessage = message
+                    self.showingAuthResult = true
+                }
+            }
+        }
+    }
+    
+    // Start editing account nickname
+    private func startEditingNickname(provider: String, account: AuthAccount) {
+        editingProvider = provider
+        editingAccountId = account.id
+        editingNickname = account.nickname
+        showingNicknameEditor = true
+    }
+    
+    // Save edited nickname
+    private func saveNickname() {
+        guard let accountId = editingAccountId else { return }
+        
+        let trimmedNickname = editingNickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedNickname.isEmpty else {
+            nicknameEditorError = "Nickname cannot be empty"
+            return
+        }
+        
+        // Clear any previous errors
+        nicknameEditorError = nil
+        
+        authManager.updateAccountNickname(
+            provider: editingProvider,
+            accountId: accountId,
+            nickname: trimmedNickname
+        ) { success, message in
+            DispatchQueue.main.async {
+                if success {
+                    self.showingNicknameEditor = false
+                } else {
+                    // Show error inline in the sheet
+                    self.nicknameEditorError = message
+                }
+            }
+        }
+    }
+    
+    // Perform account deletion
+    private func deleteAccount() {
+        guard let accountInfo = accountToDelete else { return }
+        
+        authManager.deleteAccount(
+            provider: accountInfo.provider,
+            accountId: accountInfo.accountId
+        ) { success, message in
+            DispatchQueue.main.async {
+                self.accountToDelete = nil
+                self.authResultSuccess = success
+                self.authResultMessage = message
+                self.showingAuthResult = true
+            }
         }
     }
 

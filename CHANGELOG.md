@@ -5,6 +5,28 @@ All notable changes to VibeProxy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Multi-Account Support** - Manage multiple accounts per provider with intelligent switching
+  - Add unlimited accounts for each AI service provider (Claude Code, Codex, Gemini, Qwen)
+  - **Auto-Switching**: Automatically switches accounts on rate limits (429 responses) using round-robin load balancing
+  - **Manual Account Selection**: Choose primary/active account via radio buttons in settings
+  - **Visual Account Cards**: See all accounts with nicknames, email addresses, and connection status
+  - **Account Management**: Rename accounts, remove expired accounts, add new accounts
+  - **Seamless Migration**: Automatically detects existing single accounts and creates account management UI
+  - **Backend Integration**: CLIProxyAPI automatically load-balances across all authenticated accounts
+  - **No Server Restart**: Add/remove accounts without stopping the proxy server
+  - **Persistent Preferences**: Your account preferences are saved and restored between app launches
+
+### Added
+- **Unsigned App Building** - Build VibeProxy without Apple Developer account for personal use
+  - `build-unsigned.sh` script creates unsigned .app bundles for personal distribution
+  - Output to `/Users/eddie/Downloads/` with automatic zip packaging (12MB vs 21MB)
+  - No code signing required - works for personal apps and internal distribution
+  - First launch requires right-click "Open" or Security preferences adjustment
+  - Perfect for users without Apple Developer Program subscription
+
 ## [1.0.6] - 2025-10-15
 
 ### Added
