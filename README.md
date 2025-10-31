@@ -5,11 +5,10 @@
 </p>
 
 <p align="center">
+<a href="https://github.com/secondsky/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/secondsky/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a>
 <a href="https://github.com/secondsky/vibeproxy/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
-
 <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/AI_dude_eu">
-
-<a href="https://github.com/secondsky/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/secondsky/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
+</p>
 </p>
 
 > [!IMPORTANT]
