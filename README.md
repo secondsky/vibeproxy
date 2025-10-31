@@ -42,7 +42,8 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
   - **Visual Management**: See all accounts with nicknames, emails, and connection status
 - 📊 **Real-Time Status** - Live connection status and automatic credential detection
 - 🔄 **Auto-Updates** - Monitors auth files and updates UI in real-time
-- 🎨 **Beautiful Icons** - Custom icons with dark mode support
+- ⚡ **Menu Bar Quick Switcher** - Flat "Accounts" section for 1‑click account switching, only shows providers that have accounts
+- 🎨 **Beautiful Icons** - Consistent template‑tinted icons (SF Symbols + service icons) that look great in light/dark mode
 - 💾 **Self-Contained** - Everything bundled inside the .app (server binary, config, static files)
 
 
@@ -87,6 +88,13 @@ When you click "Connect":
 - **Toggle Server**: Click the status (Running/Stopped) to start/stop
 - **Menu Bar Icon**: Shows active/inactive state
 - **Launch at Login**: Toggle to start VibeProxy automatically
+
+### Quick Account Switching (Menu Bar)
+
+- Open the VibeProxy menu and find the **Accounts** section.
+- Providers appear only when you have at least one account configured for them.
+- Click an account name to switch instantly (checkmark indicates the active account).
+- The menu rebuilds on open and updates in real‑time when credentials change.
 
 ## Requirements
 

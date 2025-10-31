@@ -3,27 +3,34 @@ import SwiftUI
 import WebKit
 import UserNotifications
 
-class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNotificationCenterDelegate, NSMenuDelegate {
     var statusItem: NSStatusItem!
     var menu: NSMenu!
     weak var settingsWindow: NSWindow?
     var serverManager: ServerManager!
     var thinkingProxy: ThinkingProxy!
+    var authManager: AuthManager!
     private let notificationCenter = UNUserNotificationCenter.current()
     private var notificationPermissionGranted = false
+    private var authDirMonitor: DispatchSourceFileSystemObject?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Setup menu bar
-        setupMenuBar()
-
         // Initialize managers
         serverManager = ServerManager()
         thinkingProxy = ThinkingProxy()
+        authManager = AuthManager()
+        authManager.checkAuthStatus()
         
         // Warm commonly used icons to avoid first-use disk hits
         preloadIcons()
         
         configureNotifications()
+
+        // Start watching auth directory for live updates
+        startMonitoringAuthDirectory()
+
+        // Setup menu bar (after managers exist)
+        setupMenuBar()
 
         // Start server automatically
         startServer()
@@ -46,7 +53,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
             ("icon-inactive.png", statusIconSize),
             ("icon-codex.png", serviceIconSize),
             ("icon-claude.png", serviceIconSize),
-            ("icon-gemini.png", serviceIconSize)
+            ("icon-gemini.png", serviceIconSize),
+            ("icon-qwen.png", serviceIconSize)
         ]
         
         for (name, size) in iconsToPreload {
@@ -86,33 +94,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         }
 
         menu = NSMenu()
-
-        // Server Status
-        menu.addItem(NSMenuItem(title: "Server: Stopped", action: nil, keyEquivalent: ""))
-        menu.addItem(NSMenuItem.separator())
-
-        // Main Actions
-        menu.addItem(NSMenuItem(title: "Open Settings", action: #selector(openSettings), keyEquivalent: "s"))
-        menu.addItem(NSMenuItem.separator())
-
-        // Server Control
-        let startStopItem = NSMenuItem(title: "Start Server", action: #selector(toggleServer), keyEquivalent: "")
-        startStopItem.tag = 100
-        menu.addItem(startStopItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Copy URL
-        let copyURLItem = NSMenuItem(title: "Copy Server URL", action: #selector(copyServerURL), keyEquivalent: "c")
-        copyURLItem.isEnabled = false
-        copyURLItem.tag = 102
-        menu.addItem(copyURLItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Quit
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
-
+        menu.delegate = self
+        rebuildMenu()
         statusItem.menu = menu
     }
 
@@ -221,21 +204,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     @objc func updateMenuBarStatus() {
-        // Update status items
-        if let serverStatus = menu.item(at: 0) {
-            serverStatus.title = serverManager.isRunning ? "Server: Running (port \(thinkingProxy.proxyPort))" : "Server: Stopped"
-        }
+        // Rebuild the menu so titles and icons reflect current state
+        rebuildMenu()
 
-        // Update button states
-        if let startStopItem = menu.item(withTag: 100) {
-            startStopItem.title = serverManager.isRunning ? "Stop Server" : "Start Server"
-        }
-
-        if let copyURLItem = menu.item(withTag: 102) {
-            copyURLItem.isEnabled = serverManager.isRunning
-        }
-
-        // Update icon based on server status
+        // Update status bar icon based on server status
         if let button = statusItem.button {
             let iconName = serverManager.isRunning ? "icon-active.png" : "icon-inactive.png"
             let fallbackSymbol = serverManager.isRunning ? "network" : "network.slash"
@@ -290,6 +262,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
             thinkingProxy.stop()
             serverManager.stop()
         }
+        stopMonitoringAuthDirectory()
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -307,5 +280,160 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound])
+    }
+
+    // MARK: - NSMenuDelegate
+    func menuWillOpen(_ menu: NSMenu) {
+        // Refresh auth statuses and rebuild right before showing
+        authManager.checkAuthStatus()
+        rebuildMenu()
+    }
+
+    // MARK: - Menu construction & helpers
+    private func rebuildMenu() {
+        menu.removeAllItems()
+
+        // Server status row
+        let statusTitle = serverManager.isRunning ? "Server: Running (port \(thinkingProxy.proxyPort))" : "Server: Stopped"
+        let serverStatusItem = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
+        serverStatusItem.image = symbolImage(serverManager.isRunning ? "antenna.radiowaves.left.and.right" : "wifi.slash", size: 16)
+        menu.addItem(serverStatusItem)
+        menu.addItem(NSMenuItem.separator())
+
+        // Accounts section (flat in main menu; only providers with accounts)
+        if appendAccountsSection() {
+            menu.addItem(NSMenuItem.separator())
+        }
+
+        // Open Settings
+        let settingsItem = NSMenuItem(title: "Open Settings", action: #selector(openSettings), keyEquivalent: "s")
+        settingsItem.image = symbolImage("gearshape", size: 16)
+        menu.addItem(settingsItem)
+        menu.addItem(NSMenuItem.separator())
+
+        // Start/Stop
+        let startStopTitle = serverManager.isRunning ? "Stop Server" : "Start Server"
+        let startStopSymbol = serverManager.isRunning ? "stop.circle" : "play.circle"
+        let startStopItem = NSMenuItem(title: startStopTitle, action: #selector(toggleServer), keyEquivalent: "")
+        startStopItem.tag = 100
+        startStopItem.image = symbolImage(startStopSymbol, size: 16)
+        menu.addItem(startStopItem)
+        menu.addItem(NSMenuItem.separator())
+
+        // Copy URL
+        let copyURLItem = NSMenuItem(title: "Copy Server URL", action: #selector(copyServerURL), keyEquivalent: "c")
+        copyURLItem.isEnabled = serverManager.isRunning
+        copyURLItem.tag = 102
+        copyURLItem.image = symbolImage("doc.on.doc", size: 16)
+        menu.addItem(copyURLItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // Quit
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
+        quitItem.image = symbolImage("xmark.circle", size: 16)
+        menu.addItem(quitItem)
+    }
+
+    private func appendAccountsSection() -> Bool {
+        // Providers with configured accounts; hide providers with zero accounts
+        let providers: [(display: String, key: String, icon: String, status: ProviderAuthStatus)] = [
+            ("Claude Code", "claude", "icon-claude.png", authManager.claudeStatus),
+            ("Codex", "codex", "icon-codex.png", authManager.codexStatus),
+            ("Gemini", "gemini", "icon-gemini.png", authManager.geminiStatus),
+            ("Qwen", "qwen", "icon-qwen.png", authManager.qwenStatus)
+        ].filter { $0.status.hasAnyAccount }
+
+        guard !providers.isEmpty else { return false }
+
+        // Section header
+        let header = NSMenuItem(title: "Accounts", action: nil, keyEquivalent: "")
+        header.image = symbolImage("person.2", size: 16)
+        header.isEnabled = false
+        menu.addItem(header)
+
+        // Provider groups
+        for (idx, provider) in providers.enumerated() {
+            let providerLabel = NSMenuItem(title: provider.display, action: nil, keyEquivalent: "")
+            if let pIcon = IconCatalog.shared.image(named: provider.icon, resizedTo: NSSize(width: 16, height: 16), template: true) {
+                providerLabel.image = pIcon
+            }
+            providerLabel.indentationLevel = 0
+            providerLabel.isEnabled = false
+            menu.addItem(providerLabel)
+
+            for account in provider.status.accounts {
+                let item = NSMenuItem(title: account.nickname, action: #selector(selectAccount(_:)), keyEquivalent: "")
+                item.state = (provider.status.activeAccount?.id == account.id) ? .on : .off
+                item.representedObject = ["provider": provider.key, "accountId": account.id]
+                item.indentationLevel = 0
+                // Ensure consistent state column spacing across providers
+                item.offStateImage = transparentStatePlaceholder
+                // Occupy the image column to avoid extra gap after the checkmark
+                if let aIcon = IconCatalog.shared.image(named: provider.icon, resizedTo: NSSize(width: 16, height: 16), template: true) {
+                    item.image = aIcon
+                }
+                menu.addItem(item)
+            }
+
+            // Thin separation between providers
+            if idx < providers.count - 1 {
+                menu.addItem(NSMenuItem.separator())
+            }
+        }
+
+        return true
+    }
+
+    // Transparent placeholder image to normalize state column width
+    private lazy var transparentStatePlaceholder: NSImage = {
+        let size = NSSize(width: 12, height: 12)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.clear.setFill()
+        NSBezierPath(rect: NSRect(origin: .zero, size: size)).fill()
+        image.unlockFocus()
+        image.isTemplate = true
+        return image
+    }()
+
+    private func symbolImage(_ name: String, size: CGFloat = 16, weight: NSFont.Weight = .regular) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: size, weight: weight)
+        let img = NSImage(systemSymbolName: name, accessibilityDescription: name)?.withSymbolConfiguration(config)
+        img?.isTemplate = true
+        return img
+    }
+
+    @objc private func selectAccount(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? [String: String],
+              let provider = payload["provider"],
+              let accountId = payload["accountId"] else { return }
+        authManager.setActiveAccount(provider: provider, accountId: accountId)
+        rebuildMenu()
+        showNotification(title: "Active Account Changed", body: "\(provider.capitalized) → \(sender.title)")
+    }
+
+    // MARK: - Auth directory monitoring
+    private func startMonitoringAuthDirectory() {
+        let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
+        try? FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
+
+        let fd = open(authDir.path, O_EVTONLY)
+        guard fd >= 0 else { return }
+
+        let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write, .delete, .rename], queue: DispatchQueue.main)
+        source.setEventHandler { [weak self] in
+            self?.authManager.checkAuthStatus()
+        }
+        source.setCancelHandler {
+            close(fd)
+        }
+        source.resume()
+        authDirMonitor = source
+    }
+
+    private func stopMonitoringAuthDirectory() {
+        authDirMonitor?.cancel()
+        authDirMonitor = nil
     }
 }

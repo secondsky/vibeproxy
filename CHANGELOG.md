@@ -27,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - First launch requires right-click "Open" or Security preferences adjustment
   - Perfect for users without Apple Developer Program subscription
 
+### Improved
+- **Menu Bar UX**
+  - Added a flat "Accounts" section directly in the main menu for true 1‑click switching (no nested submenus)
+  - Show only providers that have at least one configured account; hide empty providers entirely
+  - Each menu item uses a clear, template‑tinted icon (SF Symbols) for readability in light/dark mode
+  - Consistent indentation and checkmark alignment for all account entries
+  - Menu rebuilds on open and reflects changes immediately when auth files change
+  - Server, Settings, Start/Stop, Copy URL, and Quit now include matching icons
+
 ## [1.0.6] - 2025-10-15
 
 ### Added
