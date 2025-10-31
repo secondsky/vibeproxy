@@ -11,6 +11,19 @@
 <a href="https://github.com/automazeio/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
 </p>
 
+> [!IMPORTANT]
+> **This is a Fork**: This repository ([secondsky/vibeproxy](https://github.com/secondsky/vibeproxy)) is a fork of the original [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy) with the following enhancements:
+>
+> **Added Features:**
+> - **Multiple Accounts Per Provider**: Add unlimited accounts for each provider (e.g., multiple Claude Pro subscriptions, multiple Gemini accounts) and switch between them instantly
+> - **Menu Bar Quick Switcher**: Flat "Accounts" section in the menu bar for instant 1-click account switching - no nested submenus, just click and go
+> - **Enhanced Multi-Account UX**: Only shows providers that have configured accounts, with clean SF Symbols icons, checkmarks for active accounts, and real-time updates
+> - **Unsigned Build Script**: `build-unsigned.sh` for personal use without Apple Developer Program subscription
+> - **macOS 26.0.1 Compatibility**: Fixed settings window crashes and notification type issues
+> - **Real-Time Auth Monitoring**: Automatic UI updates when auth files change
+>
+> All core functionality from the original is preserved. These changes focus on improved UX and easier personal deployment.
+
 **Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code, ChatGPT, **Gemini**, and **Qwen** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
 
 Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
