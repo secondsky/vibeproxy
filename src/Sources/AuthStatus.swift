@@ -203,7 +203,7 @@ class AuthManager: ObservableObject {
     // Set the active account for a provider
     func setActiveAccount(provider: String, accountId: String) {
         userDefaults.set(accountId, forKey: activeAccountKey(for: provider))
-        
+
         DispatchQueue.main.async {
             switch provider.lowercased() {
             case "claude":
@@ -226,8 +226,51 @@ class AuthManager: ObservableObject {
                 break
             }
         }
-        
+
+        // Write active account to JSON file for CLIProxyAPI
+        writeActiveAccountPreference(provider: provider, accountId: accountId)
+
         NSLog("[AuthManager] Set active account for %@: %@", provider, accountId)
+    }
+
+    // Write active account preference to JSON file for CLIProxyAPI
+    private func writeActiveAccountPreference(provider: String, accountId: String) {
+        let authDir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cli-proxy-api")
+        let activeAccountsFile = authDir.appendingPathComponent("active-accounts.json")
+
+        // Extract email from accountId (format: "provider-email.json" or just email)
+        var email = accountId
+
+        // If accountId contains the provider prefix, extract just the email
+        let providerPrefix = "\(provider.lowercased())-"
+        if accountId.lowercased().hasPrefix(providerPrefix) {
+            email = String(accountId.dropFirst(providerPrefix.count))
+        }
+
+        // Remove .json suffix if present
+        if email.hasSuffix(".json") {
+            email = String(email.dropLast(5))
+        }
+
+        // Load existing active accounts or create new dictionary
+        var activeAccounts: [String: String] = [:]
+        if FileManager.default.fileExists(atPath: activeAccountsFile.path) {
+            if let data = try? Data(contentsOf: activeAccountsFile),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: String] {
+                activeAccounts = json
+            }
+        }
+
+        // Update the active account for this provider
+        activeAccounts[provider.lowercased()] = email
+
+        // Write back to file
+        if let jsonData = try? JSONSerialization.data(withJSONObject: activeAccounts, options: .prettyPrinted) {
+            try? FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
+            try? jsonData.write(to: activeAccountsFile, options: .atomic)
+            NSLog("[AuthManager] Wrote active account preference: %@ -> %@", provider, email)
+        }
     }
     
     // Delete a specific account
