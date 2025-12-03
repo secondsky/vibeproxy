@@ -88,64 +88,29 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
     },
 
     {
-      "model_display_name": "GPT-5 Codex",
-      "model": "gpt-5-codex",
+      "model_display_name": "GPT-5.1 Codex Max (recommended)",
+      "model": "gpt-5.1-codex-max",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
-      "model_display_name": "GPT-5 Codex (Low)",
-      "model": "gpt-5-codex-low",
+      "model_display_name": "GPT-5.1 Codex",
+      "model": "gpt-5.1-codex",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
-      "model_display_name": "GPT-5 Codex (Medium)",
-      "model": "gpt-5-codex-medium",
+      "model_display_name": "GPT-5.1 Codex Mini (budget)",
+      "model": "gpt-5.1-codex-mini",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
     },
     {
-      "model_display_name": "GPT-5 Codex (High)",
-      "model": "gpt-5-codex-high",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model_display_name": "GPT-5",
-      "model": "gpt-5",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model_display_name": "GPT-5 (Minimal)",
-      "model": "gpt-5-minimal",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model_display_name": "GPT-5 (Low)",
-      "model": "gpt-5-low",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model_display_name": "GPT-5 (Medium)",
-      "model": "gpt-5-medium",
-      "base_url": "http://localhost:8317/v1",
-      "api_key": "dummy-not-used",
-      "provider": "openai"
-    },
-    {
-      "model_display_name": "GPT-5 (High)",
-      "model": "gpt-5-high",
+      "model_display_name": "GPT-5.1 (general)",
+      "model": "gpt-5.1",
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
@@ -168,7 +133,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
    Then choose from:
    - `claude-sonnet-4-5-20250929` (Claude 4.5 Sonnet)
    - `claude-opus-4-1-20250805`
-   - `gpt-5`, `gpt-5-codex`, etc.
+   - `gpt-5.1`, `gpt-5.1-codex-max`, `gpt-5.1-codex`, `gpt-5.1-codex-mini`
 
 3. **Start coding!** Factory will now route all requests through VibeProxy, which handles authentication automatically.
 
@@ -185,10 +150,10 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
     - `*-thinking-32000` - "Ultra think" mode (~32K tokens)
 
 ### OpenAI Models
-- `gpt-5` - Standard GPT-5
-- `gpt-5-minimal` / `low` / `medium` / `high` - Different reasoning effort levels
-- `gpt-5-codex` - Optimized for coding
-- `gpt-5-codex-low` / `medium` / `high` - Codex with different reasoning levels
+- `gpt-5.1-codex-max` - Default and most capable Codex model (long-horizon coding)
+- `gpt-5.1-codex` - Mainline Codex model
+- `gpt-5.1-codex-mini` - Smaller, cheaper Codex option
+- `gpt-5.1` - General GPT-5.1 model with configurable reasoning effort
 
 ## Troubleshooting
 
