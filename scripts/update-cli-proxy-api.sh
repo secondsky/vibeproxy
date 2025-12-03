@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-# Fetch and rebuild the CLIProxyAPI binary from the upstream repo, then drop it
-# into src/Sources/Resources/cli-proxy-api for bundling.
+# Fetch and rebuild the CLIProxyAPI binary from the upstream repo, apply any
+# local patches we need, then drop it into src/Sources/Resources/cli-proxy-api
+# for bundling.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLIPROXY_REPO_URL=${CLIPROXY_REPO_URL:-"https://github.com/secondsky/CLIProxyAPI.git"}
@@ -20,6 +21,33 @@ echo "⬇️  Cloning..."
 git clone --depth 1 --branch "${CLIPROXY_REF}" "${CLIPROXY_REPO_URL}" "${WORKDIR}" >/dev/null
 
 cd "${WORKDIR}"
+
+# Apply local patches (documented)
+# 1) Add xhigh reasoning_effort for Codex Max (router-for-me/CLIProxyAPI#355)
+TARGET_FILE="internal/translator/openai/openai/responses/openai_openai-responses_request.go"
+if [ -f "$TARGET_FILE" ] && ! grep -q 'reasoning_effort", "xhigh"' "$TARGET_FILE"; then
+  echo "🩹 Applying patch: add xhigh reasoning_effort (PR 355)"
+  patch -p1 -l <<'PR355'
+diff --git a/internal/translator/openai/openai/responses/openai_openai-responses_request.go b/internal/translator/openai/openai/responses/openai_openai-responses_request.go
+index 69bc9f7..efaa8a1 100644
+--- a/internal/translator/openai/openai/responses/openai_openai-responses_request.go
++++ b/internal/translator/openai/openai/responses/openai_openai-responses_request.go
+@@ -199,6 +199,8 @@ func ConvertOpenAIResponsesRequestToOpenAIChatCompletions(modelName string, inpu
+  		case "medium":
+  			out, _ = sjson.Set(out, "reasoning_effort", "medium")
+  		case "high":
+  			out, _ = sjson.Set(out, "reasoning_effort", "high")
++ 		case "xhigh":
++ 			out, _ = sjson.Set(out, "reasoning_effort", "xhigh")
+  		default:
+  			out, _ = sjson.Set(out, "reasoning_effort", "auto")
+  		}
+  	}
+
+PR355
+else
+  echo "ℹ️  Patch already present or target file missing; skipping patch"
+fi
 
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
