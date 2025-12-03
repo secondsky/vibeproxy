@@ -6,6 +6,9 @@ help: ## Show this help message
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
+update-cli-proxy: ## Fetch & rebuild cli-proxy-api from secondsky/CLIProxyAPI (CLIPROXY_REF env optional)
+	@scripts/update-cli-proxy-api.sh
+
 build: ## Build the Swift executable (debug)
 	@echo "🔨 Building Swift executable..."
 	@cd src && swift build

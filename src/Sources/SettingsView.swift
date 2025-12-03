@@ -271,7 +271,7 @@ struct SettingsView: View {
                     Text("VibeProxy \(appVersion) was made possible thanks to")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Link("CLIProxyAPI", destination: URL(string: "https://github.com/router-for-me/CLIProxyAPI")!)
+                    Link("CLIProxyAPI", destination: URL(string: "https://github.com/secondsky/CLIProxyAPI")!)
                         .font(.caption)
                         .underline()
                         .foregroundColor(.secondary)

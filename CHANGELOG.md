@@ -166,7 +166,7 @@ Initial release of VibeProxy - a native macOS menu bar application for managing 
 
 ### Technical
 
-- Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
+- Built on [CLIProxyAPI](https://github.com/secondsky/CLIProxyAPI)
 - Code signed with Apple Developer ID
 - Notarized for seamless installation
 - Automated version injection from git tags

@@ -18,6 +18,13 @@ VERSION=${1:-"dev"}
 echo -e "${BLUE}📦 Creating VibeProxy Release ${VERSION}${NC}"
 echo ""
 
+# Refresh cli-proxy-api binary from upstream
+echo -e "${BLUE}🔄 Updating cli-proxy-api from secondsky/CLIProxyAPI...${NC}"
+cd "$PROJECT_DIR" && make update-cli-proxy
+
+# Return to project root for remaining steps
+cd "$PROJECT_DIR"
+
 # Clean previous builds
 echo -e "${BLUE}🧹 Cleaning previous builds...${NC}"
 cd "$PROJECT_DIR"

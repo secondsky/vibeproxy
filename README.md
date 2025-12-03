@@ -26,7 +26,7 @@
 
 **Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code, ChatGPT, **Gemini**, and **Qwen** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
 
-Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
+Built on [CLIProxyAPI](https://github.com/secondsky/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
 
 > [!IMPORTANT]
 > **NEW: Gemini and Qwen Support! 🎉** VibeProxy now supports Google's Gemini AI and Qwen AI with full OAuth authentication. Connect your accounts and use Gemini and Qwen with your favorite AI coding tools!
@@ -151,9 +151,15 @@ VibeProxy/
 - **AuthStatus**: Monitors `~/.cli-proxy-api/` for authentication files
 - **File Monitoring**: Real-time updates when auth files are added/removed
 
+### Updating the bundled cli-proxy-api
+
+- Run `make update-cli-proxy` to fetch and rebuild the binary from `secondsky/CLIProxyAPI` (defaults to `main`).
+- Override with `CLIPROXY_REF=<tag|branch|commit>` to pin a specific revision.
+- Output is written to `src/Sources/Resources/cli-proxy-api` and is bundled by `make app` / `build-unsigned.sh`.
+
 ## Credits
 
-VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services.
+VibeProxy is built on top of [CLIProxyAPI](https://github.com/secondsky/CLIProxyAPI), an excellent unified proxy server for AI services.
 
 Special thanks to the CLIProxyAPI project for providing the core functionality that makes VibeProxy possible.
 

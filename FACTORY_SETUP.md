@@ -289,13 +289,13 @@ This works seamlessly with Factory CLI - just select the thinking variant in you
 
 ## Acknowledgments
 
-VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services. Without CLIProxyAPI's robust OAuth handling, token management, and API routing capabilities, this application would not be possible.
+VibeProxy is built on top of [CLIProxyAPI](https://github.com/secondsky/CLIProxyAPI), an excellent unified proxy server for AI services. Without CLIProxyAPI's robust OAuth handling, token management, and API routing capabilities, this application would not be possible.
 
 **Special thanks to the CLIProxyAPI project and its contributors for creating the foundation that makes VibeProxy work.**
 
 ## References
 
-- **CLIProxyAPI**: [https://github.com/router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
+- **CLIProxyAPI**: [https://github.com/secondsky/CLIProxyAPI](https://github.com/secondsky/CLIProxyAPI)
 - **Factory CLI**: [https://docs.factory.ai/cli](https://docs.factory.ai/cli)
 - **Original Setup Guide**: [https://gist.github.com/ben-vargas/9f1a14ac5f78d10eba56be437b7c76e5](https://gist.github.com/ben-vargas/9f1a14ac5f78d10eba56be437b7c76e5)
 
