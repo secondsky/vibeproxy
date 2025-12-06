@@ -49,6 +49,27 @@ else
   echo "ℹ️  Patch already present or target file missing; skipping patch"
 fi
 
+# 2) Add DeepSeek-V3.2-Chat model definition (router-for-me commit 897c40b)
+MODEL_FILE="internal/registry/model_definitions.go"
+if [ -f "$MODEL_FILE" ] && ! grep -q 'deepseek-v3.2-chat' "$MODEL_FILE"; then
+  echo "🩹 Applying patch: add DeepSeek-V3.2-Chat model"
+  patch -p1 -l <<'DEEPSEEK'
+diff --git a/internal/registry/model_definitions.go b/internal/registry/model_definitions.go
+--- a/internal/registry/model_definitions.go
++++ b/internal/registry/model_definitions.go
+@@ -476,6 +476,7 @@ func GetIFlowModels() []*ModelInfo {
+ 		{ID: "glm-4.6", DisplayName: "GLM-4.6", Description: "Zhipu GLM 4.6 general model"},
+ 		{ID: "kimi-k2", DisplayName: "Kimi-K2", Description: "Moonshot Kimi K2 general model"},
+ 		{ID: "deepseek-v3.2", DisplayName: "DeepSeek-V3.2-Exp", Description: "DeepSeek V3.2 experimental"},
++		{ID: "deepseek-v3.2-chat", DisplayName: "DeepSeek-V3.2", Description: "DeepSeek V3.2"},
+ 		{ID: "deepseek-v3.1", DisplayName: "DeepSeek-V3.1-Terminus", Description: "DeepSeek V3.1 Terminus"},
+ 		{ID: "deepseek-r1", DisplayName: "DeepSeek-R1", Description: "DeepSeek reasoning model R1"},
+ 		{ID: "deepseek-v3", DisplayName: "DeepSeek-V3-671B", Description: "DeepSeek V3 671B"},
+DEEPSEEK
+else
+  echo "ℹ️  DeepSeek-V3.2-Chat already present or model file missing; skipping patch"
+fi
+
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
 echo "🔨 Building cli-proxy-api (darwin/arm64)..."
