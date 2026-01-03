@@ -23,11 +23,16 @@ git clone --depth 1 --branch "${CLIPROXY_REF}" "${CLIPROXY_REPO_URL}" "${WORKDIR
 cd "${WORKDIR}"
 
 # Apply local patches (documented)
-# 1) Add xhigh reasoning_effort for Codex Max (router-for-me/CLIProxyAPI#355)
+# 1) Ensure Codex Max "xhigh" reasoning_effort is supported (older upstreams had a hardcoded allowlist).
 TARGET_FILE="internal/translator/openai/openai/responses/openai_openai-responses_request.go"
-if [ -f "$TARGET_FILE" ] && ! grep -q 'reasoning_effort", "xhigh"' "$TARGET_FILE"; then
-  echo "🩹 Applying patch: add xhigh reasoning_effort (PR 355)"
-  patch -p1 -l <<'PR355'
+if [ -f "$TARGET_FILE" ]; then
+  if grep -q 'sjson.Set(out, "reasoning_effort", effort)' "$TARGET_FILE"; then
+    echo "ℹ️  reasoning_effort is passed through; skipping xhigh patch"
+  elif grep -q 'reasoning_effort", "xhigh"' "$TARGET_FILE"; then
+    echo "ℹ️  xhigh already present; skipping patch"
+  else
+    echo "🩹 Applying patch: add xhigh reasoning_effort (legacy)"
+    if patch -p1 -l <<'PR355'
 diff --git a/internal/translator/openai/openai/responses/openai_openai-responses_request.go b/internal/translator/openai/openai/responses/openai_openai-responses_request.go
 index 69bc9f7..efaa8a1 100644
 --- a/internal/translator/openai/openai/responses/openai_openai-responses_request.go
@@ -45,8 +50,14 @@ index 69bc9f7..efaa8a1 100644
   	}
 
 PR355
+    then
+      echo "✅ xhigh patch applied"
+    else
+      echo "⚠️  xhigh patch did not apply cleanly; continuing without it"
+    fi
+  fi
 else
-  echo "ℹ️  Patch already present or target file missing; skipping patch"
+  echo "ℹ️  Target file missing; skipping xhigh patch"
 fi
 
 # 2) Add DeepSeek-V3.2-Chat model definition (router-for-me commit 897c40b)

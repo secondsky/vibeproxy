@@ -87,9 +87,7 @@ class AuthManager: ObservableObject {
                     var expiredDate: Date?
                     
                     if let expiredStr = json["expired"] as? String {
-                        let formatter = ISO8601DateFormatter()
-                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                        expiredDate = formatter.date(from: expiredStr)
+                        expiredDate = parseISO8601Date(expiredStr)
                     }
                     
                     // Extract account metadata
@@ -98,9 +96,7 @@ class AuthManager: ObservableObject {
                     
                     var createdAt: Date?
                     if let createdAtStr = json["createdAt"] as? String {
-                        let formatter = ISO8601DateFormatter()
-                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                        createdAt = formatter.date(from: createdAtStr)
+                        createdAt = parseISO8601Date(createdAtStr)
                     }
                     
                     let account = AuthAccount(
@@ -198,6 +194,21 @@ class AuthManager: ObservableObject {
             return username
         }
         return "Account"
+    }
+
+    private func parseISO8601Date(_ string: String) -> Date? {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let withFractional = ISO8601DateFormatter()
+        withFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = withFractional.date(from: trimmed) {
+            return date
+        }
+
+        let withoutFractional = ISO8601DateFormatter()
+        withoutFractional.formatOptions = [.withInternetDateTime]
+        return withoutFractional.date(from: trimmed)
     }
     
     // Set the active account for a provider
